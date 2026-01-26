@@ -106,8 +106,8 @@ class News
             $titleNode = $xpath->query('.//h1', $header)->item(0);
             $title = htmlspecialchars(trim($titleNode->textContent));
             if ($titleNode) {
-                $output .= '<h1>' . $title . '</h1>';
-                $output .= "<img srcset=\"{$imageSrcSet}\" sizes=\"{$imageSizes}\" alt=\"{$title}\" class=\"w-full\"/>";
+                $output .= '<h1 class="text-3xl font-bold mb-4 text-center">' . $title . '</h1>';
+                $output .= "<img srcset=\"{$imageSrcSet}\" sizes=\"{$imageSizes}\" alt=\"{$title}\" class=\"w-full py-4\"/>";
             }
 
             $timeNode = $xpath->query('.//time[@datetime]', $header)->item(0);

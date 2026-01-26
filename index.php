@@ -30,8 +30,8 @@ if (!empty($_POST['url'])) {
 <head>
     <meta charset="UTF-8">
     <title>Reader Mode</title>
+    <link rel="stylesheet" href="css/app.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="bg-neutral-800 font-sans text-neutral-100 p-5">
