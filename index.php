@@ -5,6 +5,8 @@ require_once 'News.php';
 
 if (!empty($_POST['url'])) {
     $url = trim($_POST['url']);
+    $content = '';
+    $error = '';
 
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
         $error = 'Ongeldige URL.';
@@ -29,12 +31,12 @@ if (!empty($_POST['url'])) {
     <meta charset="UTF-8">
     <title>Reader Mode</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-</head>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="font-sans bg-neutral-900 text-neutral-200 p-5">
-    <div class="flex flex-col w-[800px] max-w-4xl">
-        <div class="text-center mb-5">
+<body class="bg-neutral-800 font-sans text-neutral-100 p-5">
+    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center">
+        <div class="logo text-center mb-5">
             <a title="Naar de homepagina" href="/">
                 <svg fill="none" height="30" width="244"
                     xmlns="http://www.w3.org/2000/svg">
@@ -51,23 +53,53 @@ if (!empty($_POST['url'])) {
                 </svg>
             </a>
         </div>
-        <div class="article-list">
-            <h2>Opgeslagen artikelen</h2>
-            <select class="w-full p-2.5 text-base mb-5" id="article-select">
-                <option
-                    value="&lt;?= htmlspecialchars($article['url']) ?&gt;">
-                </option>
-            </select>
-        </div>
-        <form method="post" class="mb-5 flex p-5 rounded-md">
+
+        <?php if (!empty($articles)) : ?>
+            <div class="article-list">
+                <h2>Opgeslagen artikelen <span x-if="articles.length > 0">(<?= count($articles) ?>)</span></h2>
+                <select class="bg-amber-50 w-full p-2.5 text-black text-base mb-5 border rounded-md" id="article-select">
+                    <?php foreach ($articles as $article) : ?>
+                        <option value="<?= htmlspecialchars($article['id']) ?>">
+                            <?= htmlspecialchars($article['title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" class="w-full mb-5 flex py-5 rounded-md">
             <input required="" placeholder="Plak hier de artikel-URL…"
-                name="url" type="url" class="w-full p-2.5 text-base border border-neutral-600 rounded-md">
+                name="url" type="url" class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
             <button type="submit"
                 class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">Lees</button>
         </form>
         <p class="text-red-600">
+            <?= htmlspecialchars($error ?? '') ?>
         </p>
-    </div>
+        <div id="article-content" class="max-w-full leading-6 text-justify prose prose-h2:text-2xl prose-p:py-2">
+            <?= $content ?>
+        </div>
+    </main>
+    <script>
+        function initArticleSelector() {
+            return {
+                articles: <?= json_encode($articles ?? []) ?>,
+                init() {
+                    const select = document.getElementById('article-select');
+                    select.addEventListener('change', (event) => {
+                        const id = event.target.value;
+                        this.loadArticleContent(id);
+                    });
+                },
+                loadArticleContent(id) {
+                    const article = this.articles.find(a => a.id === id);
+                    if (article) {
+                        document.querySelector('#article-content').innerHTML = article.content;
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>

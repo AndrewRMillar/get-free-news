@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// TODO: make class single responsibility principle compliant
 class News
 {
     public string $title;
@@ -70,6 +71,22 @@ class News
         $parsed = parse_url($url);
         $baseUrl = $parsed['scheme'] . '://' . $parsed['host'];
 
+        // Main image
+        $entries = $xpath->query('//link[@rel="preload" and @as="image"]', $dom);
+
+        $imageSrcSet = '';
+        $imageSizes = '';
+
+        foreach ($entries as $entry) {
+            if (!$entry instanceof DOMElement) {
+                continue;
+            }
+
+            $imageSrcSet = $entry->getAttribute('imagesrcset');
+            $imageSizes = $entry->getAttribute('imagesizes');
+        }
+
+
         $main = $xpath->query('//main[@id="main"]')->item(0);
         if (!$main) {
             return '<p><em>Geen main-content gevonden.</em></p>';
@@ -90,6 +107,7 @@ class News
             $title = htmlspecialchars(trim($titleNode->textContent));
             if ($titleNode) {
                 $output .= '<h1>' . $title . '</h1>';
+                $output .= "<img srcset=\"{$imageSrcSet}\" sizes=\"{$imageSizes}\" alt=\"{$title}\" class=\"w-full\"/>";
             }
 
             $timeNode = $xpath->query('.//time[@datetime]', $header)->item(0);
@@ -157,7 +175,6 @@ class News
             $img->setAttribute('style', 'max-width:100%;height:auto;');
         }
 
-
         $output .= $dom->saveHTML($section);
         $output .= '</article>';
 
@@ -172,7 +189,7 @@ class News
     private function saveArticleToJson(string $title, string $url, string $content): void
     {
         $data = [
-            'id' => md5((string)(new DateTime())->getTimestamp()),
+            'id' => md5((string) date('c')),
             'title' => $title,
             'url' => $url,
             'content' => $content,
