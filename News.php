@@ -141,40 +141,6 @@ class News
             }
         }
 
-        // Images + lazy loading (seem to be missing from curl document)
-        foreach ($xpath->query('.//img', $section) as $img) {
-
-            if (!$img instanceof DOMElement) {
-                continue;
-            }
-
-            // Lazy loading
-            if ($img->getAttribute('src') === '') {
-
-                if ($img->hasAttribute('data-src')) {
-                    $img->setAttribute('src', $img->getAttribute('data-src'));
-                } elseif ($img->hasAttribute('data-srcset')) {
-                    $src = trim(explode(' ', $img->getAttribute('data-srcset'))[0]);
-                    $img->setAttribute('src', $src);
-                } elseif ($img->hasAttribute('srcset')) {
-                    $src = trim(explode(' ', $img->getAttribute('srcset'))[0]);
-                    $img->setAttribute('src', $src);
-                }
-            }
-
-            // Make src urls absolute
-            $src = $img->getAttribute('src');
-            if ($src && !str_starts_with($src, 'http')) {
-                $img->setAttribute('src', $this->makeAbsoluteUrl($baseUrl, $src));
-            }
-
-            if ($img->hasAttribute('loading')) {
-                $img->removeAttribute('loading');
-            }
-
-            $img->setAttribute('style', 'max-width:100%;height:auto;');
-        }
-
         $output .= $dom->saveHTML($section);
         $output .= '</article>';
 
