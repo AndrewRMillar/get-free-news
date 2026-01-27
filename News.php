@@ -199,10 +199,4 @@ class News
 
         return [];
     }
-
-    public function loadArticle($article): void
-    {
-        // TODO: load article from json to the $content variable
-        $this->content = $article['content'];
-    }
 }
