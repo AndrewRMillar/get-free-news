@@ -3,5 +3,10 @@
     "description": "Get my news for free",
     "require": {
         "webonyx/graphql-php": "^15.30"
+    },
+    "autoload": {
+        "classmap": [
+            "src"
+        ]
     }
 }
