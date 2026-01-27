@@ -48,7 +48,6 @@ A news article reader application that fetches, extracts, and serves articles th
 ├── css/                    # Stylesheets
 ├── data/                   # Persistent storage (JSON)
 ├── index.php               # Main entry point
-├── News.php               # News-related utilities
 └── vendor/                # Composer dependencies
 ```
 
