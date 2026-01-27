@@ -142,6 +142,7 @@ if (!empty($_POST['url'])) {
                     return json.data.articles.map(a => a.id);
                 }
             }
+        }
     </script>
 </body>
 
