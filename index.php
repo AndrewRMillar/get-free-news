@@ -92,7 +92,7 @@ if (!empty($_POST['url'])) {
                         document.querySelector('#article-content').innerHTML = article.content;
                     }
                 },
-                async loadArticles() {
+                async loadArticle(id) {
                     // TODO: implement GraphQL query to fetch articles
                     const query = `
                         query GetArticle($id: String!) {
@@ -118,9 +118,30 @@ if (!empty($_POST['url'])) {
 
                     const json = await res.json();
                     this.articles = json.data.articles;
+                },
+                async getArticleIds() {
+                    const query = `
+                        query {
+                            articles {
+                                id
+                            }
+                        }
+                    `;
+
+                    const res = await fetch('/graphql.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            query
+                        })
+                    });
+
+                    const json = await res.json();
+                    return json.data.articles.map(a => a.id);
                 }
             }
-        }
     </script>
 </body>
 

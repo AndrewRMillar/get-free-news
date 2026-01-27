@@ -12,13 +12,27 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Example data source (DB, API, etc.)
-$articles = json_decode(file_get_contents('articles.json'), true);
+// File-based storage
+function loadArticles(): array
+{
+    $file = __DIR__ . '/../data/articles.json';
 
-$users = [
-    ['id' => 1, 'name' => 'Alice'],
-    ['id' => 2, 'name' => 'Bob'],
-];
+    if (!file_exists($file)) {
+        return [];
+    }
+
+    return json_decode(file_get_contents($file), true) ?? [];
+}
+
+function getArticleById(string $id): ?array
+{
+    foreach (loadArticles() as $article) {
+        if ($article['id'] === $id) {
+            return $article;
+        }
+    }
+    return null;
+}
 
 // Define Article type
 $articleType = new ObjectType([
