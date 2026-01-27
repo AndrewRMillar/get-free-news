@@ -2,5 +2,7 @@
 *.html
 !/package.json
 !/package-lock.json
+!/composer.json
 node_modules/
+vendor/
 css/app.css

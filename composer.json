@@ -1,0 +1,7 @@
+{
+    "name": "andrew/getnewsfree",
+    "description": "Get my news for free",
+    "require": {
+        "webonyx/graphql-php": "^15.30"
+    }
+}

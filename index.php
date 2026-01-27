@@ -31,11 +31,11 @@ if (!empty($_POST['url'])) {
     <meta charset="UTF-8">
     <title>Reader Mode</title>
     <link rel="stylesheet" href="css/app.css">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="bg-neutral-800 font-sans text-neutral-100 p-5">
-    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center">
+    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center" x-data="initArticleSelector()">
         <div class="logo text-center mb-5">
             <a title="Naar de homepagina" href="/">
                 <svg fill="none" height="30" width="244"
@@ -56,8 +56,9 @@ if (!empty($_POST['url'])) {
 
         <?php if (!empty($articles)) : ?>
             <div class="article-list">
-                <h2>Opgeslagen artikelen <span x-if="articles.length > 0">(<?= count($articles) ?>)</span></h2>
-                <select class="bg-amber-50 w-full p-2.5 text-black text-base mb-5 border rounded-md" id="article-select">
+                <h2 class="text-xl text-white">Opgeslagen artikelen <span x-show="articles.length > 0">(<?= count($articles) ?>)</span></h2>
+                <select class="bg-amber-50 w-full p-2.5 text-black text-base mb-5 border rounded-md"
+                    @change="loadArticleContent($event.target.value)">
                     <?php foreach ($articles as $article) : ?>
                         <option value="<?= htmlspecialchars($article['id']) ?>">
                             <?= htmlspecialchars($article['title']) ?>
@@ -76,7 +77,7 @@ if (!empty($_POST['url'])) {
         <p class="text-red-600">
             <?= htmlspecialchars($error ?? '') ?>
         </p>
-        <div id="article-content" class="max-w-full leading-6 text-justify prose prose-h2:text-2xl prose-p:py-2">
+        <div id="article-content" class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2">
             <?= $content ?>
         </div>
     </main>
@@ -84,18 +85,39 @@ if (!empty($_POST['url'])) {
         function initArticleSelector() {
             return {
                 articles: <?= json_encode($articles ?? []) ?>,
-                init() {
-                    const select = document.getElementById('article-select');
-                    select.addEventListener('change', (event) => {
-                        const id = event.target.value;
-                        this.loadArticleContent(id);
-                    });
-                },
                 loadArticleContent(id) {
                     const article = this.articles.find(a => a.id === id);
+                    console.log(id, article);
                     if (article) {
                         document.querySelector('#article-content').innerHTML = article.content;
                     }
+                },
+                async loadArticles() {
+                    // TODO: implement GraphQL query to fetch articles
+                    const query = `
+                        query GetArticle($id: String!) {
+                            article(id: $id) {
+                                id
+                                title
+                                content
+                                url
+                                savedAt
+                            }
+                        }
+                    `;
+
+                    const res = await fetch('/graphql.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            query
+                        })
+                    });
+
+                    const json = await res.json();
+                    this.articles = json.data.articles;
                 }
             }
         }
