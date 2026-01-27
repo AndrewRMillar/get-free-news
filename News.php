@@ -5,20 +5,15 @@ declare(strict_types=1);
 // TODO: make class single responsibility principle compliant
 class News
 {
-    public string $title;
-    public string $content;
-    public string $url;
     public array $articles = [];
 
+    const string JSON_FILE = __DIR__ . '/../data/articles.json';
+
     public function __construct(
-        string $url = '',
-        string $title = '',
-        string $content = ''
-    ) {
-        $this->title = $title;
-        $this->content = $content;
-        $this->url = $url;
-    }
+        public string $url = '',
+        public string $title = '',
+        public string $content = ''
+    ) {}
 
 
     /**
@@ -162,11 +157,11 @@ class News
             'saved_at' => date('c'),
         ];
 
-        $filename = 'articles.json';
+        $file = self::JSON_FILE;
 
-        if (file_exists($filename)) {
+        if (file_exists($file)) {
 
-            $existingData = json_decode(file_get_contents($filename) ?: '[]', true);
+            $existingData = json_decode(file_get_contents($file) ?: '[]', true);
             if (is_array($existingData)) {
                 if ($this->isInExistingData($existingData, $data)) {
                     return;
@@ -178,7 +173,7 @@ class News
             $data = [$data];
         }
 
-        file_put_contents($filename, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 
     private function isInExistingData(array $existingData, array $newData): bool
@@ -193,10 +188,10 @@ class News
 
     public function getArticlesFromFile(): array
     {
-        $filename = 'articles.json';
+        $file = self::JSON_FILE;
 
-        if (file_exists($filename)) {
-            $existingData = json_decode(file_get_contents($filename) ?: '[]', true);
+        if (file_exists($file)) {
+            $existingData = json_decode(file_get_contents($file) ?: '[]', true);
             if (is_array($existingData)) {
                 return $existingData;
             }
