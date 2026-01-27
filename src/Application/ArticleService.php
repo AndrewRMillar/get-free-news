@@ -20,7 +20,7 @@ final class ArticleService
         $content = $this->extractor->extract($html, $url);
 
         $article = new Article(
-            md5(date('c')),
+            '0',
             'Onbekend',
             $url,
             $content,

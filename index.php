@@ -1,29 +1,4 @@
-<?php
-
-declare(strict_types=1);
-require_once 'News.php';
-
-if (!empty($_POST['url'])) {
-    $url = trim($_POST['url']);
-    $content = '';
-    $error = '';
-
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        $error = 'Ongeldige URL.';
-    } else {
-        $news = new News();
-
-        $html = $news->fetchUrl($url);
-        if (!$html) {
-            $error = 'Kon de pagina niet ophalen.';
-        } else {
-            $content = $news->extractReadableContent($html, $url);
-        }
-
-        $articles = $news->getArticlesFromFile();
-    }
-}
-?>
+<?php require_once __DIR__ . '/bootstrap.php'; ?>
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -31,6 +6,9 @@ if (!empty($_POST['url'])) {
     <meta charset="UTF-8">
     <title>Reader Mode</title>
     <link rel="stylesheet" href="css/app.css">
+    <script>
+        window.CSRF_TOKEN = "<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) ?>";
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -54,37 +32,102 @@ if (!empty($_POST['url'])) {
             </a>
         </div>
 
-        <?php if (!empty($articles)) : ?>
-            <div class="article-list">
-                <h2 class="text-xl text-white">Opgeslagen artikelen <span x-show="articles.length > 0">(<?= count($articles) ?>)</span></h2>
-                <select class="bg-amber-50 w-full p-2.5 text-black text-base mb-5 border rounded-md"
-                    @change="loadArticleContent($event.target.value)">
-                    <?php foreach ($articles as $article) : ?>
-                        <option value="<?= htmlspecialchars($article['id']) ?>">
-                            <?= htmlspecialchars($article['title']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        <?php endif; ?>
+        <div x-data="articleList()" class="mb-6">
 
-        <form method="post" class="w-full mb-5 flex py-5 rounded-md">
-            <input required="" placeholder="Plak hier de artikel-URL…"
-                name="url" type="url" class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
-            <button type="submit"
-                class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">Lees</button>
-        </form>
-        <p class="text-red-600">
-            <?= htmlspecialchars($error ?? '') ?>
-        </p>
-        <div id="article-content" class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2">
-            <?= $content ?>
+            <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
+
+            <select
+                class="bg-amber-50 w-full p-2.5 text-black rounded-md"
+                @change="load($event.target.value)">
+                <option value="">— kies een artikel —</option>
+                <template x-for="article in articles" :key="article.id">
+                    <option :value="article.id" x-text="article.title"></option>
+                </template>
+            </select>
+        </div>
+
+        <div x-data="articleReader()"
+            class="w-full mb-5 flex py-5 rounded-md gap-2">
+
+            <input x-model="url" type="url" required placeholder="Plak hier de artikel-URL…"
+                class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
+
+            <button @click.prevent="submit" :disabled="loading"
+                class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">
+                <span x-show="!loading">Lees</span>
+                <span x-show="loading">Laden…</span>
+            </button>
+        </div>
+
+        <!-- Result -->
+        <div x-show="article" class="mt-6">
+            <h1 class="text-2xl font-bold mb-4" x-text="article.title"></h1>
+            <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2"
+                x-html="article.content"></div>
         </div>
     </main>
+    <script>
+        function articleReader() {
+            return {
+                url: '',
+                loading: false,
+                article: null,
+                error: null,
+
+                async submit() {
+                    this.loading = true;
+                    this.error = null;
+                    this.article = null;
+
+                    const query = `
+                mutation FetchArticle($url: String!) {
+                    fetchArticle(url: $url) {
+                        id
+                        title
+                        content
+                        savedAt
+                    }
+                }
+            `;
+
+                    try {
+                        const res = await fetch('public/graphql.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': window.CSRF_TOKEN
+                            },
+                            body: JSON.stringify({
+                                query,
+                                variables: {
+                                    url: this.url
+                                }
+                            })
+                        });
+
+                        const json = await res.json();
+
+                        if (json.errors) {
+                            throw new Error(json.errors[0].message);
+                        }
+
+                        this.article = json.data.fetchArticle;
+                    } catch (e) {
+                        this.error = e.message;
+                        alert(this.error);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            };
+        }
+    </script>
+
     <script>
         function initArticleSelector() {
             return {
                 articles: <?= json_encode($articles ?? []) ?>,
+                article: '',
                 loadArticleContent(id) {
                     const article = this.articles.find(a => a.id === id);
                     console.log(id, article);
@@ -93,7 +136,6 @@ if (!empty($_POST['url'])) {
                     }
                 },
                 async loadArticle(id) {
-                    // TODO: implement GraphQL query to fetch articles
                     const query = `
                         query GetArticle($id: String!) {
                             article(id: $id) {
@@ -117,7 +159,7 @@ if (!empty($_POST['url'])) {
                     });
 
                     const json = await res.json();
-                    this.articles = json.data.articles;
+                    this.article = json.data.article;
                 },
                 async getArticleIds() {
                     const query = `

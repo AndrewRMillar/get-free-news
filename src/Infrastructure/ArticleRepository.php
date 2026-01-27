@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// TODO: implement a sqlite database storage
 final class ArticleRepository
 {
     public function __construct(
@@ -16,6 +17,10 @@ final class ArticleRepository
             if ($existing->title === $article->title) {
                 return;
             }
+        }
+
+        if ($article->id === '' || $article->id === '0') {
+            $article->id = (string) $this->getNextId($articles);
         }
 
         $articles[] = $article;
@@ -51,5 +56,15 @@ final class ArticleRepository
             ),
             json_decode(file_get_contents($this->file), true) ?? []
         );
+    }
+
+    private function getNextId(array $articles): int
+    {
+        if (empty($articles)) {
+            return 1;
+        }
+
+        $ids = array_map(fn(Article $a) => (int) $a->id, $articles);
+        return max($ids) + 1;
     }
 }
