@@ -19,8 +19,8 @@ $headers = getallheaders();
 $csrfHeader = $headers['X-CSRF-Token'] ?? '';
 
 if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && (!isset($_SESSION['csrf_token']) || $csrfHeader !== $_SESSION['csrf_token'])
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    (!isset($_SESSION['csrf_token']) || $csrfHeader !== $_SESSION['csrf_token'])
 ) {
     http_response_code(403);
     echo json_encode([
@@ -71,13 +71,14 @@ function loadArticles(): array
     return json_decode(file_get_contents($file), true) ?? [];
 }
 
-function getArticleById(string $id): ?array
+function getArticleById(int $id): ?array
 {
     foreach (loadArticles() as $article) {
-        if ($article['id'] === $id) {
+        if ((int)$article['id'] === $id) {
             return $article;
         }
     }
+
     return null;
 }
 
@@ -90,18 +91,13 @@ $queryType = new ObjectType([
             'args' => [
                 'id' => Type::nonNull(Type::int())
             ],
-            'resolve' => fn($root, $args) =>
-            $repository->findAll()
-                ? array_values(
-                    array_filter(
-                        $repository->findAll(),
-                        fn($a) => $a->id === $args['id']
-                    )
-                )[0] ?? null : null
+            'resolve' => function ($root, array $args) {
+                return getArticleById($args['id']);
+            },
         ],
 
         // List (ID + title requested by client)
-        'getArticles' => [
+        'articles' => [
             'type' => Type::listOf($articleType),
             'resolve' => fn() => $repository->findAll()
         ],

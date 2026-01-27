@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/bootstrap.php'; ?>
+<?php require_once __DIR__ . '/public/bootstrap.php'; ?>
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -13,7 +13,7 @@
 </head>
 
 <body class="bg-neutral-800 font-sans text-neutral-100 p-5">
-    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center" x-data="initArticleSelector()">
+    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center">
         <div class="logo text-center mb-5">
             <a title="Naar de homepagina" href="/">
                 <svg fill="none" height="30" width="244"
@@ -32,6 +32,20 @@
             </a>
         </div>
 
+        <div x-data="articleReader()">
+
+            <div class="w-full mb-5 flex py-5 rounded-md gap-2">
+                <input x-model="url" type="url" required placeholder="Plak hier de artikel-URL…"
+                    class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
+
+                <button @click.prevent="submit" :disabled="loading"
+                    class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">
+                    <span x-show="!loading">Lees</span>
+                    <span x-show="loading">Laden…</span>
+                </button>
+            </div>
+        </div>
+
         <div x-data="articleList()" class="mb-6">
 
             <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
@@ -44,55 +58,46 @@
                     <option :value="article.id" x-text="article.title"></option>
                 </template>
             </select>
+
+            <!-- Result -->
+            <template x-if="article">
+                <div x-show="article" class="mt-6">
+                    <h1 class="text-2xl font-bold mb-4" x-text="article.title"></h1>
+                    <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2"
+                        x-html="article.content"></div>
+                </div>
+            </template>
         </div>
 
-        <div x-data="articleReader()"
-            class="w-full mb-5 flex py-5 rounded-md gap-2">
-
-            <input x-model="url" type="url" required placeholder="Plak hier de artikel-URL…"
-                class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
-
-            <button @click.prevent="submit" :disabled="loading"
-                class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">
-                <span x-show="!loading">Lees</span>
-                <span x-show="loading">Laden…</span>
-            </button>
-        </div>
-
-        <!-- Result -->
-        <div x-show="article" class="mt-6">
-            <h1 class="text-2xl font-bold mb-4" x-text="article.title"></h1>
-            <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2"
-                x-html="article.content"></div>
-        </div>
     </main>
     <script>
         function articleReader() {
             return {
                 url: '',
                 loading: false,
-                article: null,
                 error: null,
 
                 async submit() {
+                    console.log('submitting', this.url);
                     this.loading = true;
                     this.error = null;
                     this.article = null;
 
-                    const query = `
-                mutation FetchArticle($url: String!) {
-                    fetchArticle(url: $url) {
-                        id
-                        title
-                        content
-                        savedAt
-                    }
-                }
-            `;
+                    const query = String.raw`
+mutation FetchArticle($url: String!) {
+    fetchArticle(url: $url) {
+        id
+        title
+        content
+        savedAt
+    }
+}
+`;
 
                     try {
                         const res = await fetch('public/graphql.php', {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-Token': window.CSRF_TOKEN
@@ -124,34 +129,28 @@
     </script>
 
     <script>
-        function initArticleSelector() {
+        function articleList() {
             return {
-                articles: <?= json_encode($articles ?? []) ?>,
-                article: '',
-                loadArticleContent(id) {
-                    const article = this.articles.find(a => a.id === id);
-                    console.log(id, article);
-                    if (article) {
-                        document.querySelector('#article-content').innerHTML = article.content;
-                    }
-                },
-                async loadArticle(id) {
-                    const query = `
-                        query GetArticle($id: String!) {
-                            article(id: $id) {
-                                id
-                                title
-                                content
-                                url
-                                savedAt
-                            }
-                        }
-                    `;
+                articles: [],
+                article: null,
 
-                    const res = await fetch('/graphql.php', {
+                async init() {
+                    console.log('Loading articles...');
+                    const query = String.raw`
+query {
+    articles {
+        id
+        title
+    }
+}
+`;
+
+                    const res = await fetch('public/graphql.php', {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': window.CSRF_TOKEN
                         },
                         body: JSON.stringify({
                             query
@@ -159,33 +158,48 @@
                     });
 
                     const json = await res.json();
+                    this.articles = json.data.articles;
+                },
+
+                async load(id) {
+                    if (!id) return;
+
+                    const query = String.raw`
+query GetArticle($id: Int!) {
+    article(id: $id) {
+        id
+        title
+        content
+        savedAt
+    }
+}
+`;
+
+                    const res = await fetch('public/graphql.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({
+                            query,
+                            variables: {
+                                id: Number(id)
+                            }
+                        })
+                    });
+
+                    const json = await res.json();
+
+                    console.log('Loaded article:', json.data.article);
+
                     this.article = json.data.article;
-                },
-                async getArticleIds() {
-                    const query = `
-                        query {
-                            articles {
-                                id
-                            }
-                        }
-                    `;
-
-                    const res = await fetch('/graphql.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            query
-                        })
-                    });
-
-                    const json = await res.json();
-                    return json.data.articles.map(a => a.id);
                 }
-            }
+            };
         }
     </script>
+
 </body>
 
 </html>
