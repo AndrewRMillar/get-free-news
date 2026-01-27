@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+final class ArticleService
+{
+    public function __construct(
+        private HttpFetcher $fetcher,
+        private ArticleContentExtractor $extractor,
+        private ArticleRepository $repository
+    ) {}
+
+    public function fetchAndSave(string $url): string|false
+    {
+        $html = $this->fetcher->fetch($url);
+        if (!$html) {
+            return false;
+        }
+
+        $content = $this->extractor->extract($html, $url);
+
+        $article = new Article(
+            md5(date('c')),
+            'Onbekend',
+            $url,
+            $content,
+            date('c')
+        );
+
+        $this->repository->save($article);
+
+        return $content;
+    }
+}
