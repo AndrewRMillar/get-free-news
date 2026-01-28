@@ -2,7 +2,9 @@
     "name": "andrew/getnewsfree",
     "description": "Get my news for free",
     "require": {
-        "webonyx/graphql-php": "^15.30"
+        "webonyx/graphql-php": "^15.30",
+        "psr/log": "^3.0",
+        "monolog/monolog": "^3.10"
     },
     "autoload": {
         "classmap": [
