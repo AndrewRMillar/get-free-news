@@ -32,16 +32,24 @@
             </a>
         </div>
 
-        <div x-data="articleReader()">
+        <div x-data="articleReader()" class="mb-5 py-5">
 
-            <div class="w-full mb-5 flex py-5 rounded-md gap-2">
-                <input x-model="url" type="url" required placeholder="Plak hier de artikel-URL…"
+            <div class="w-full flex rounded-md gap-2">
+                <input x-model="url" type="url" id="url" required placeholder="Plak hier de artikel-URL…"
                     class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
 
                 <button @click.prevent="submit" :disabled="loading"
-                    class="bg-blue-600 py-2.5 px-6 text-white text-base rounded-md">
+                    class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md leading-6 font-semibold text-white transition duration-150 ease-in-out hover:bg-indigo-400">
                     <span x-show="!loading">Lees</span>
-                    <span x-show="loading">Laden…</span>
+                    <span x-show="loading" class="inline-flex items-center">
+                        <svg class="mr-3 -ml-1 size-5 animate-spin text-white"
+                            xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Laden
+                    </span>
                 </button>
             </div>
 
@@ -49,13 +57,13 @@
                 <div
                     x-show="error"
                     x-transition.opacity.duration.300ms
-                    class="bg-red-600 text-white p-3 rounded-md mt-4 opacity-100"
+                    class="bg-red-600 text-white p-3 rounded-md mt-4 opacity-100 ease-out"
                     x-text="error">
                 </div>
             </template>
         </div>
 
-        <div x-data="articleList()" class="mb-6">
+        <div x-data="articleList()" class="my-6">
 
             <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
 
@@ -120,6 +128,7 @@ mutation FetchArticle($url: String!) {
                         });
 
                         const json = await res.json();
+                        console.log('response', json, json.data.fetchArticle);
 
                         if (json.errors) {
                             this.showError(json.errors[0].message);
