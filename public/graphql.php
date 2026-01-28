@@ -8,6 +8,7 @@ use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
+use GraphQL\Error\UserError;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -114,14 +115,37 @@ $mutationType = new ObjectType([
             ],
             'resolve' => function ($root, $args) use ($articleService, $repository) {
 
-                $content = $articleService->fetchAndSave($args['url']);
-                if ($content === false) {
-                    return null;
-                }
+                try {
+                    $content = $articleService->fetchAndSave($args['url']);
+                    if ($content === false) {
+                        return null;
+                    }
 
-                // Return last saved article
-                $articles = $repository->findAll();
-                return end($articles) ?: null;
+                    if (!$content) {
+                        throw new ArticleException('Could not read article.');
+                    }
+
+                    // Return last saved article
+                    $articles = $repository->findAll();
+                    return end($articles) ?: null;
+                } catch (ArticleException $e) {
+                    throw new UserError($e->getMessage(), 0, null, null, null, [
+                        'code' => $e->codeKey
+                    ]);
+                } catch (Throwable $e) {
+                    // Log the real error
+                    $this->logger->error($e->getMessage(), ['exception' => $e]);
+
+                    // Send safe message to frontend
+                    throw new UserError(
+                        'An error occurred while processing the article.',
+                        0,
+                        null,
+                        null,
+                        null,
+                        ['code' => 'INTERNAL_ERROR']
+                    );
+                }
             }
         ]
 
