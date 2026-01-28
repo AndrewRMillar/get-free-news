@@ -17,11 +17,11 @@ final class ArticleService
             return false;
         }
 
-        $content = $this->extractor->extract($html, $url);
+        [$title, $content] = $this->extractor->extract($html, $url);
 
         $article = new Article(
             '0',
-            'Onbekend',
+            $title,
             $url,
             $content,
             date('c')
