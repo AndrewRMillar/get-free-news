@@ -11,74 +11,165 @@ final class ArticleContentExtractor
 {
     private ?LoggerInterface $logger = null;
 
-    public function __construct()
+    public function __construct(?LoggerInterface $logger = null)
     {
-        // Initialize logger if needed
-        if (!$this->logger) {
-            $logger = new Logger('name');
-            $logger->pushHandler(new StreamHandler(__DIR__ . '../../log/debug.log', Level::Debug));
+        if ($logger) {
             $this->logger = $logger;
+            return;
         }
+
+        $logFile = realpath(__DIR__ . '/../../log') . '/debug.log';
+
+        $logger = new Logger('article_extractor');
+        $logger->pushHandler(new StreamHandler($logFile, Level::Debug));
+
+        $this->logger = $logger;
+
+        $this->logger->info('Logger initialized successfully');
     }
 
 
-    public function extract(string $html, string $url): string
+    public function extract(string $html, string $url): ?array
     {
-        $this->logger->info('Extracting content from URL: ' . $url);
+        $this->logger->info('Starting article extraction', ['url' => $url]);
+
+        libxml_use_internal_errors(true);
 
         $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html);
-        $content = '';
+        if (!$dom->loadHTML('<?xml encoding="utf-8" ?>' . $html)) {
+            $this->logger->error('Failed to load HTML');
+            return null;
+        }
+
+        libxml_clear_errors();
+
         $xpath = new DOMXPath($dom);
-        $this->logger->info('DOM loaded and XPath initialized.' . $dom->childElementCount);
 
         $parsed = parse_url($url);
+        if (!$parsed || empty($parsed['scheme']) || empty($parsed['host'])) {
+            $this->logger->error('Invalid URL structure', ['url' => $url]);
+            return null;
+        }
+
         $baseUrl = $parsed['scheme'] . '://' . $parsed['host'];
 
-        $head = $xpath->query('.//head')->item(0);
-        $this->logger->info('Head element found: ' . ($head ? 'yes' : 'no'));
-        if ($head) {
-            // Get the title from the head if possible
-            $title = $xpath->query('.//title', $head)->item(0);
-            $this->logger->info('Title element found: ' . ($title ? 'yes' : 'no'));
-            if ($title) {
-                $content .= '<h1 class="text-2xl font-bold my-4">' . htmlspecialchars($title->textContent) . '</h1>';
-            }
+        // Get the title and possible hero image
+        [$title, $titleHtml] = $this->extractHeader($xpath, $baseUrl);
 
-            // Get the imageSrcSet and imageSizes attributes to build an <img> tag
-            $link = $xpath->query('.//link[@rel="preload" and @as="image"]', $head)->item(0);
-            $this->logger->info('Preload image link found: ' . ($link ? 'yes' : 'no'));
-            if ($link instanceof DOMElement) {
-                $imageSrcSet = $link->getAttribute('imageSrcSet');
-                $imageSizes = $link->getAttribute('imageSizes');
-                if ($imageSrcSet && $imageSizes) {
-                    // Build an <img> tag with the imageSrcSet and imageSizes attributes
-                    $content .= '<img src="' . htmlspecialchars($baseUrl) . '" srcset="' . htmlspecialchars($imageSrcSet) . '" sizes="' . htmlspecialchars($imageSizes) . " alt=\"{$title} ? {$title} : ''\" />";
+        $metaHtml = $this->extractPublishedDate($xpath);
+
+        $section = $this->extractArticleSection($xpath);
+        if (!$section) {
+            return null;
+        }
+
+        $this->cleanSection($xpath, $section);
+        $this->fixRelativeLinks($xpath, $section, $baseUrl);
+
+        $articleHtml = '<article>'
+            . $titleHtml
+            . $metaHtml
+            . $dom->saveHTML($section)
+            . '</article>';
+
+        $this->logger->info('Article extraction complete');
+
+        return [$title, $articleHtml];
+    }
+
+    private function extractHeader(DOMXPath $xpath, string $baseUrl): array
+    {
+        $title = null;
+        $titleHtml = '';
+
+        $titleNode = $xpath->query('//head/title')->item(0);
+        if ($titleNode) {
+            $title = trim($titleNode->textContent);
+            $titleHtml .= '<h1 class="text-2xl text-white font-bold text-center my-4">'
+                . htmlspecialchars($title)
+                . '</h1>';
+        }
+
+        // Preloaded hero image
+        $link = $xpath->query('//head/meta[@property="og:image"]')->item(0);
+
+        if ($link instanceof DOMElement) {
+            $src = $link->getAttribute('content');
+
+            if ($src) {
+                $titleHtml .= '<img class="w-full max-h-96 object-cover my-4 mx-auto" src="';
+                $titleHtml .= htmlspecialchars($src) . '"';
+
+                if ($title) {
+                    $titleHtml .= ' alt="' . htmlspecialchars($title) . '"';
                 }
+
+                $titleHtml .= ' />';
             }
         }
 
+        $this->logger->info('Og image image found', ['srcset' => (bool) $src]);
+
+        return [$title, $titleHtml];
+    }
+
+    private function extractPublishedDate(DOMXPath $xpath): string
+    {
+        $meta = $xpath->query('//meta[@property="article:published_time"]')->item(0);
+
+        if (!$meta instanceof DOMElement) {
+            return '';
+        }
+
+        try {
+            $date = new DateTime($meta->getAttribute('content'));
+            $this->logger->info('Published time extracted', ['published_time' => $date->format(DateTime::ATOM)]);
+
+            return '<p class="text-sm text-gray-500">'
+                . 'Gepubliceerd op: ' . htmlspecialchars($date->format('l j F Y - H:i'))
+                . '</p>';
+        } catch (Throwable $e) {
+            $this->logger->warning('Invalid published_time format');
+            return '';
+        }
+    }
+
+    private function extractArticleSection(DOMXPath $xpath): ?DOMElement
+    {
         $main = $xpath->query('//main[@id="main"]')->item(0);
         if (!$main) {
-            return '<p><em>Geen main-content gevonden.</em></p>';
+            $main = $xpath->query('//main[@class="main"]')->item(0);
+        }
+
+        if (!$main) {
+            $this->logger->warning('Main element not found');
+            return null;
         }
 
         $article = $xpath->query('.//article', $main)->item(0);
         if (!$article) {
-            return '<p><em>Geen artikel gevonden.</em></p>';
+            $this->logger->warning('Article element not found');
+            return null;
         }
 
         $section = $xpath->query('./section', $article)->item(0);
         if (!$section) {
-            return '<p><em>Geen artikel-body gevonden.</em></p>';
+            $this->logger->warning('Section element not found');
+            return null;
         }
 
-        // Clean up unwanted elements
-        foreach ($xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section) as $remove) {
-            $remove->parentNode?->removeChild($remove);
-        }
+        return $section;
+    }
 
-        // Fix relative links
+    private function cleanSection(DOMXPath $xpath, DOMElement $section): void
+    {
+        foreach ($xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section) as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+    }
+
+    private function fixRelativeLinks(DOMXPath $xpath, DOMElement $section, string $baseUrl): void
+    {
         foreach ($xpath->query('.//a', $section) as $a) {
             if (!$a instanceof DOMElement) {
                 continue;
@@ -92,7 +183,5 @@ final class ArticleContentExtractor
                 );
             }
         }
-
-        return '<article>' . $content . $dom->saveHTML($section) . '</article>';
     }
 }
