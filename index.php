@@ -44,6 +44,15 @@
                     <span x-show="loading">Laden…</span>
                 </button>
             </div>
+
+            <template x-if="error">
+                <div
+                    x-show="error"
+                    x-transition.opacity.duration.300ms
+                    class="bg-red-600 text-white p-3 rounded-md mt-4 opacity-100"
+                    x-text="error">
+                </div>
+            </template>
         </div>
 
         <div x-data="articleList()" class="mb-6">
@@ -113,17 +122,30 @@ mutation FetchArticle($url: String!) {
                         const json = await res.json();
 
                         if (json.errors) {
-                            throw new Error(json.errors[0].message);
+                            this.showError(json.errors[0].message);
+                            return;
                         }
 
                         this.article = json.data.fetchArticle;
                     } catch (e) {
-                        this.error = e.message;
-                        alert(this.error);
+                        this.showError('Kan geen verbinding maken met de server.');
                     } finally {
                         this.loading = false;
                     }
-                }
+                },
+                showError(message) {
+                    this.error = message;
+
+                    if (this.errorTimeout) {
+                        clearTimeout(this.errorTimeout);
+                    }
+
+                    this.errorTimeout = setTimeout(() => {
+                        this.error = null;
+                        this.errorTimeout = null;
+                    }, 5000);
+                },
+
             };
         }
     </script>
