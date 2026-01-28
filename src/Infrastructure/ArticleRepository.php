@@ -14,7 +14,7 @@ final class ArticleRepository
         $articles = $this->findAll();
 
         foreach ($articles as $existing) {
-            if ($existing->title === $article->title) {
+            if ($existing->url === $article->url) {
                 return;
             }
         }
