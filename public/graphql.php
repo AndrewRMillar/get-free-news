@@ -9,6 +9,12 @@ use GraphQL\Type\Schema;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Error\UserError;
+use Application\ArticleService;
+use Application\ArticleException;
+use Infrastructure\ArticleRepository;
+use Infrastructure\HttpFetcher;
+use Application\ArticleContentExtractor;
+use PDO;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -30,8 +36,18 @@ if (
     exit;
 }
 
+$pdo = new PDO(
+    'sqlite:' . __DIR__ . '/../data/articles.sqlite',
+    null,
+    null,
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]
+);
+
 // Infrastructure
-$repository = new ArticleRepository();
+$repository = new ArticleRepository($pdo);
 
 $fetcher = new HttpFetcher();
 $extractor = new ArticleContentExtractor();
