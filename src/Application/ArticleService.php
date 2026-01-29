@@ -7,7 +7,7 @@ namespace Application;
 use Infrastructure\ArticleRepository;
 use Infrastructure\HttpFetcher;
 use Application\ArticleContentExtractor;
-use Domain\Article;
+use Domain\Model\Article;
 
 final class ArticleService
 {

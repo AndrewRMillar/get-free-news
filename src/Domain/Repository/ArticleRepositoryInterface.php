@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Domain;
+namespace Domain\Repository;
 
-use Domain\Article;
+use Domain\Model\Article;
 
 interface ArticleRepositoryInterface
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Infrastructure;
 
-use Domain\Article;
-use Domain\ArticleRepositoryInterface;
+use Domain\Model\Article;
+use Domain\Repository\ArticleRepositoryInterface;
 use PDO;
 
 // TODO: implement a sqlite database storage
