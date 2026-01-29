@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+namespace Application;
+
+use Infrastructure\ArticleRepository;
+use Infrastructure\HttpFetcher;
+use Application\ArticleContentExtractor;
+use Domain\Article;
+
 final class ArticleService
 {
     public function __construct(
@@ -20,7 +27,7 @@ final class ArticleService
         [$title, $content] = $this->extractor->extract($html, $url);
 
         $article = new Article(
-            '0',
+            0,
             $title,
             $url,
             $content,

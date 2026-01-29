@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+namespace Domain;
+
 final class Article
 {
     public function __construct(
-        public string $id,
+        public int $id,
         public string $title,
         public string $url,
         public string $content,

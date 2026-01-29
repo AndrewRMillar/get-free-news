@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Infrastructure;
+
 final class HttpFetcher
 {
     public function fetch(string $url): string|false

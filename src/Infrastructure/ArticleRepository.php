@@ -2,8 +2,14 @@
 
 declare(strict_types=1);
 
+namespace Infrastructure;
+
+use Domain\Article;
+use Domain\ArticleRepositoryInterface;
+use PDO;
+
 // TODO: implement a sqlite database storage
-final class ArticleRepository
+final class ArticleRepository implements ArticleRepositoryInterface
 {
     private const DB_PATH = __DIR__ . '/../../data/articles.db';
     private PDO $pdo;
@@ -16,19 +22,10 @@ final class ArticleRepository
 
     public function save(Article $article): void
     {
-        $articles = $this->findAll();
-
-        foreach ($articles as $existing) {
-            if ($existing->url === $article->url) {
-                return;
-            }
-        }
-
-        $articles[] = $article;
-
         $stmt = $this->pdo->prepare('
             INSERT INTO articles (id, title, url, content, publication_date)
             VALUES (:id, :title, :url, :content, :publication_date)
+            ON CONFLICT(id) DO NOTHING
         ');
 
         $stmt->execute([
@@ -53,6 +50,28 @@ final class ArticleRepository
                 $a['publication_date']
             ),
             $rows
+        );
+    }
+
+    public function findById(int $id): ?Article
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM articles WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute([':id' => $id]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null;
+        }
+
+        return new Article(
+            (int) $row['id'],
+            $row['title'],
+            $row['url'],
+            $row['content'],
+            $row['publication_date']
         );
     }
 }

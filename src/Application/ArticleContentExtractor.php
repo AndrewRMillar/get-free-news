@@ -2,10 +2,17 @@
 
 declare(strict_types=1);
 
+namespace Application;
+
 use Psr\Log\LoggerInterface;
 use Monolog\Logger;
 use Monolog\Level;
 use Monolog\Handler\StreamHandler;
+use DOMDocument;
+use DOMXPath;
+use DOMElement;
+use DateTime;
+use Throwable;
 
 final class ArticleContentExtractor
 {
