@@ -14,8 +14,8 @@
 
 <body class="bg-neutral-800 font-sans text-neutral-100 p-5">
     <main class="flex flex-col w-[800px] max-w-4xl justify-self-center">
-        <div class="logo text-center mb-5">
-            <a title="Naar de homepagina" href="/">
+        <div class="w-full logo mb-5">
+            <a title="Naar de homepagina" href="/" class="flex flew-col w-full justify-center">
                 <svg fill="none" height="30" width="244"
                     xmlns="http://www.w3.org/2000/svg">
                     <g clip-path="url(#a)">
@@ -68,25 +68,46 @@
             <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
 
             <select
-                class="bg-amber-50 w-full p-2.5 text-black rounded-md"
-                @change="load($event.target.value)">
+                class="bg-amber-50 w-full p-2.5 text-black rounded-md overflow-hidden"
+                @change="load($event.target.value)" id="article-select">
                 <option value="">— kies een artikel —</option>
-                <template x-for="article in articles" :key="article.id">
-                    <option :value="article.id" x-text="article.title"></option>
+                <template x-for="article in $store.state.articles" :key="article.id">
+                    <option :value="article.id" x-text="article.title" class="w-full overflow-hidden"></option>
                 </template>
             </select>
 
             <!-- Result -->
-            <template x-if="article">
-                <div x-show="article" class="mt-6">
-                    <h1 class="text-2xl font-bold mb-4" x-text="article.title"></h1>
+            <template x-if="$store.state.currentArticle">
+                <div x-show="$store.state.currentArticle" class="mt-6">
+                    <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1>
                     <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2"
-                        x-html="article.content"></div>
+                        x-html="$store.state.currentArticle.content"></div>
                 </div>
             </template>
         </div>
 
     </main>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('state', {
+                articles: [],
+                currentArticle: null,
+                initiated: false,
+                init() {
+                    if (this.initiated) return;
+                    this.initiated = true;
+                },
+                addArticle(article) {
+                    // prevent duplicates
+                    if (!this.articles.find(a => a.id === article.id)) {
+                        this.articles.unshift(article);
+                    }
+                    this.currentArticle = article;
+                }
+            })
+        })
+    </script>
+
     <script>
         function articleReader() {
             return {
@@ -95,10 +116,9 @@
                 error: null,
 
                 async submit() {
-                    console.log('submitting', this.url);
                     this.loading = true;
                     this.error = null;
-                    this.article = null;
+                    let article = null;
 
                     const query = String.raw`
 mutation FetchArticle($url: String!) {
@@ -106,7 +126,7 @@ mutation FetchArticle($url: String!) {
         id
         title
         content
-        savedAt
+        publishedAt
     }
 }
 `;
@@ -128,14 +148,13 @@ mutation FetchArticle($url: String!) {
                         });
 
                         const json = await res.json();
-                        console.log('response', json, json.data.fetchArticle);
+                        // console.log('response', json, json.data.fetchArticle);
 
                         if (json.errors) {
                             this.showError(json.errors[0].message);
                             return;
                         }
-
-                        this.article = json.data.fetchArticle;
+                        Alpine.store('state').addArticle(json.data.fetchArticle);
                     } catch (e) {
                         this.showError('Kan geen verbinding maken met de server.');
                     } finally {
@@ -189,7 +208,7 @@ query {
                     });
 
                     const json = await res.json();
-                    this.articles = json.data.articles;
+                    Alpine.store('state').articles = json.data.articles;
                 },
 
                 async load(id) {
@@ -201,7 +220,7 @@ query GetArticle($id: Int!) {
         id
         title
         content
-        savedAt
+        publishedAt
     }
 }
 `;
@@ -223,9 +242,7 @@ query GetArticle($id: Int!) {
 
                     const json = await res.json();
 
-                    console.log('Loaded article:', json.data.article);
-
-                    this.article = json.data.article;
+                    Alpine.store('state').currentArticle = json.data.article;
                 }
             };
         }
