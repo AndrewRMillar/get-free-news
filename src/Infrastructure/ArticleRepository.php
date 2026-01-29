@@ -5,9 +5,14 @@ declare(strict_types=1);
 // TODO: implement a sqlite database storage
 final class ArticleRepository
 {
-    public function __construct(
-        private string $file
-    ) {}
+    private const DB_PATH = __DIR__ . '/../../data/articles.db';
+    private PDO $pdo;
+
+    public function __construct()
+    {
+        $this->pdo = new PDO('sqlite:' . self::DB_PATH);
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
 
     public function save(Article $article): void
     {
@@ -19,52 +24,35 @@ final class ArticleRepository
             }
         }
 
-        if ($article->id === '' || $article->id === '0') {
-            $article->id = (string) $this->getNextId($articles);
-        }
-
         $articles[] = $article;
 
-        file_put_contents(
-            $this->file,
-            json_encode(
-                array_map(fn($a) => [
-                    'id' => $a->id,
-                    'title' => $a->title,
-                    'url' => $a->url,
-                    'content' => $a->content,
-                    'saved_at' => $a->savedAt,
-                ], $articles),
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
-            )
-        );
+        $stmt = $this->pdo->prepare('
+            INSERT INTO articles (id, title, url, content, publication_date)
+            VALUES (:id, :title, :url, :content, :publication_date)
+        ');
+
+        $stmt->execute([
+            ':id' => $article->id,
+            ':title' => $article->title,
+            ':url' => $article->url,
+            ':content' => $article->content,
+            ':publication_date' => $article->publishedAt,
+        ]);
     }
 
     public function findAll(): array
     {
-        if (!file_exists($this->file)) {
-            return [];
-        }
-
+        $stmt = $this->pdo->query('SELECT * FROM articles');
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(
             fn($a) => new Article(
                 $a['id'],
                 $a['title'],
                 $a['url'],
                 $a['content'],
-                $a['saved_at']
+                $a['publication_date']
             ),
-            json_decode(file_get_contents($this->file), true) ?? []
+            $rows
         );
-    }
-
-    private function getNextId(array $articles): int
-    {
-        if (empty($articles)) {
-            return 1;
-        }
-
-        $ids = array_map(fn(Article $a) => (int) $a->id, $articles);
-        return max($ids) + 1;
     }
 }
