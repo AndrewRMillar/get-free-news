@@ -11,14 +11,7 @@ use PDO;
 // TODO: implement a sqlite database storage
 final class ArticleRepository implements ArticleRepositoryInterface
 {
-    private const DB_PATH = __DIR__ . '/../../data/articles.db';
-    private PDO $pdo;
-
-    public function __construct()
-    {
-        $this->pdo = new PDO('sqlite:' . self::DB_PATH);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    }
+    public function __construct(private PDO $pdo) {}
 
     public function save(Article $article): void
     {
