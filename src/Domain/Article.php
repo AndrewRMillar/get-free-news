@@ -9,6 +9,6 @@ final class Article
         public string $title,
         public string $url,
         public string $content,
-        public string $savedAt
+        public string $publishedAt,
     ) {}
 }

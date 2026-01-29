@@ -60,11 +60,12 @@ final class ArticleContentExtractor
 
         $section = $this->extractArticleSection($xpath);
         if (!$section) {
+            $this->logger->error('Failed to extract article section');
             return null;
         }
 
-        $this->cleanSection($xpath, $section);
-        $this->fixRelativeLinks($xpath, $section, $baseUrl);
+        $section = $this->cleanSection($xpath, $section);
+        $section = $this->fixRelativeLinks($xpath, $section, $baseUrl);
 
         $articleHtml = '<article>'
             . $titleHtml
@@ -108,7 +109,7 @@ final class ArticleContentExtractor
             }
         }
 
-        $this->logger->info('Og image image found', ['srcset' => (bool) $src]);
+        $this->logger->info('Og image image found', ['src' => (bool) $src]);
 
         return [$title, $titleHtml];
     }
@@ -136,39 +137,51 @@ final class ArticleContentExtractor
 
     private function extractArticleSection(DOMXPath $xpath): ?DOMElement
     {
-        $main = $xpath->query('//main[@id="main"]')->item(0);
-        if (!$main) {
-            $main = $xpath->query('//main[@class="main"]')->item(0);
-        }
+        $this->logger->info('Start extracting article section');
+        $logMessage = '';
 
+        $main = $xpath->query('//main')->item(0);
         if (!$main) {
             $this->logger->warning('Main element not found');
             return null;
         }
+        $logMessage .= 'Found main element. ';
 
         $article = $xpath->query('.//article', $main)->item(0);
         if (!$article) {
             $this->logger->warning('Article element not found');
             return null;
         }
+        $logMessage .= 'Found article element. ';
 
         $section = $xpath->query('./section', $article)->item(0);
+        if (!$section) {
+            $section = $xpath->query('div[@class*="block-text"]')->item(0);
+        }
+        $logMessage .= 'Searched for section element. ';
+
         if (!$section) {
             $this->logger->warning('Section element not found');
             return null;
         }
+        $logMessage .= 'Found section element. ';
+
+        $this->logger->info($logMessage);
 
         return $section;
     }
 
-    private function cleanSection(DOMXPath $xpath, DOMElement $section): void
+    private function cleanSection(DOMXPath $xpath, DOMElement $section): DOMElement
     {
         foreach ($xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section) as $node) {
             $node->parentNode?->removeChild($node);
         }
+        $this->logger->info('Cleaned unwanted elements from article section');
+
+        return $section;
     }
 
-    private function fixRelativeLinks(DOMXPath $xpath, DOMElement $section, string $baseUrl): void
+    private function fixRelativeLinks(DOMXPath $xpath, DOMElement $section, string $baseUrl): DOMElement
     {
         foreach ($xpath->query('.//a', $section) as $a) {
             if (!$a instanceof DOMElement) {
@@ -183,5 +196,8 @@ final class ArticleContentExtractor
                 );
             }
         }
+        $this->logger->info('Fixed relative links in article section');
+
+        return $section;
     }
 }

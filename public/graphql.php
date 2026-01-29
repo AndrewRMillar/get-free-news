@@ -31,9 +31,7 @@ if (
 }
 
 // Infrastructure
-$repository = new ArticleRepository(
-    __DIR__ . '/../data/articles.json'
-);
+$repository = new ArticleRepository();
 
 $fetcher = new HttpFetcher();
 $extractor = new ArticleContentExtractor();
@@ -53,9 +51,9 @@ $articleType = new ObjectType([
         'title' => Type::string(),
         'url' => Type::string(),
         'content' => Type::string(),
-        'savedAt' => [
+        'publishedAt' => [
             'type' => Type::string(),
-            'resolve' => fn($article) => $article->savedAt
+            'resolve' => fn($article) => $article->publishedAt
         ]
     ]
 ]);
