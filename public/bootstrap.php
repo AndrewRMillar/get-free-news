@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 session_start();
 
+spl_autoload_register(function (string $class) {
+    $baseDir = __DIR__ . '/../src/';
+
+    $file = $baseDir . str_replace('\\', '/', $class) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }

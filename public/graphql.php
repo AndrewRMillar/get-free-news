@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+$container = require __DIR__ . '/container.php';
 
 use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
@@ -14,7 +15,6 @@ use Application\ArticleException;
 use Infrastructure\ArticleRepository;
 use Infrastructure\HttpFetcher;
 use Application\ArticleContentExtractor;
-use PDO;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -46,18 +46,16 @@ $pdo = new PDO(
     ]
 );
 
-// Infrastructure
-$repository = new ArticleRepository($pdo);
+// Infrastructure & Application services
 
-$fetcher = new HttpFetcher();
-$extractor = new ArticleContentExtractor();
-
-// Application
-$articleService = new ArticleService(
-    $fetcher,
-    $extractor,
-    $repository
-);
+/** @var ArticleRepository $repository */
+$repository = $container[ArticleRepository::class];
+/** @var HttpFetcher $fetcher */
+$fetcher = $container[HttpFetcher::class];
+/** @var ArticleContentExtractor $extractor */
+$extractor = $container[ArticleContentExtractor::class];
+/** @var ArticleService $articleService */
+$articleService = $container[ArticleService::class];
 
 // GraphQL Types
 $articleType = new ObjectType([

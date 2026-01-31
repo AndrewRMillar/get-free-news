@@ -36,25 +36,27 @@ LLM generated readme, it's a bit much but I'll leave it as is for now...
 
 ```
 ├── src/
-│   ├── Domain/              # Core business entities
-│   │   ├── Article.php      # Article entity
-│   │   └── ArticleRepositoryInterface.php  # Repository interface
-│   ├── Application/         # Business logic layer
+│   ├── Domain/                                 # Core business entities
+│   │   └── Model/
+│   │       ├── Article.php                     # Article entity
+│   │   └── Repository/ 
+│   │   │   └── ArticleRepositoryInterface.php  # Repository interface
+│   ├── Application/                            # Business logic layer
 │   │   ├── ArticleService.php
 │   │   ├── ArticleContentExtractor.php
 │   │   └── ArticleException.php
-│   └── Infrastructure/      # External integrations
-│       ├── ArticleRepository.php  # SQLite implementation
+│   └── Infrastructure/                         # External integrations
+│       ├── ArticleRepository.php               # SQLite implementation
 │       └── HttpFetcher.php
 ├── public/
-│   ├── graphql.php         # GraphQL endpoint
-│   └── bootstrap.php       # Application initialization
-├── css/                    # Stylesheets
-├── data/                   # Persistent storage
-│       ├── articles.json   # Legacy JSON storage
-│       └── articles.sqlite # SQLite database
-├── index.php               # Main entry point
-└── vendor/                # Composer dependencies
+│   ├── graphql.php                             # GraphQL endpoint
+│   └── bootstrap.php                           # Application initialization
+├── css/                                        # Stylesheets
+├── data/                                       # Persistent storage
+│       ├── articles.json                       # Legacy JSON storage
+│       └── articles.sqlite                     # SQLite database
+├── index.php                                   # Main entry point
+└── vendor/                                     # Composer dependencies
 ```
 
 ## Installation
