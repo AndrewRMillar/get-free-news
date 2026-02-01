@@ -46,7 +46,7 @@ final class ArticleRepository implements ArticleRepositoryInterface
         );
     }
 
-    /* TODO: perhpas a better method wouold be to add a that checks if the article was added correctly, perhaps also?    */
+    /* TODO: perhpas a better method wouold be to add a that checks if the article was added correctly, perhaps also? */
     public function fetchCount(): int
     {
         $stmt = $this->pdo->query('SELECT COUNT(*) as count FROM articles');
@@ -60,6 +60,27 @@ final class ArticleRepository implements ArticleRepositoryInterface
             'SELECT * FROM articles WHERE id = :id LIMIT 1'
         );
         $stmt->execute([':id' => $id]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null;
+        }
+
+        return new Article(
+            (int) $row['id'],
+            $row['title'],
+            $row['url'],
+            $row['content'],
+            $row['publication_date']
+        );
+    }
+
+    public function findLast(): ?Article
+    {
+        $stmt = $this->pdo->query(
+            'SELECT * FROM articles ORDER BY id DESC LIMIT 1'
+        );
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
