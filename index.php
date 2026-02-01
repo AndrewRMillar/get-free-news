@@ -116,6 +116,10 @@
                 error: null,
 
                 async submit() {
+                    if (!this.url) {
+                        this.error = 'Voer een geldige URL in.';
+                        return;
+                    }
                     this.loading = true;
                     this.error = null;
                     let article = null;
