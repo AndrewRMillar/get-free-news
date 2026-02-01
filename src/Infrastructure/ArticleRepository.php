@@ -62,18 +62,7 @@ final class ArticleRepository implements ArticleRepositoryInterface
         $stmt->execute([':id' => $id]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            return null;
-        }
-
-        return new Article(
-            (int) $row['id'],
-            $row['title'],
-            $row['url'],
-            $row['content'],
-            $row['publication_date']
-        );
+        return $row ? $this->mapRowToArticle($row) : null;
     }
 
     public function findLast(): ?Article
@@ -83,11 +72,11 @@ final class ArticleRepository implements ArticleRepositoryInterface
         );
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $this->mapRowToArticle($row) : null;
+    }
 
-        if (!$row) {
-            return null;
-        }
-
+    private function mapRowToArticle(array $row): Article
+    {
         return new Article(
             (int) $row['id'],
             $row['title'],
