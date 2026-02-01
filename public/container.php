@@ -6,38 +6,52 @@ use Infrastructure\HttpFetcher;
 use Infrastructure\ArticleRepository;
 use Application\ArticleContentExtractor;
 use Application\ArticleService;
+use Shared\Container;
 
-return [
+require_once __DIR__ . '/../Shared/Container.php';
 
-    PDO::class => function () {
-        return new PDO(
-            'sqlite:' . __DIR__ . '/../data/articles.sqlite',
-            null,
-            null,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
-    },
+$pdo = new PDO(
+    'sqlite:' . __DIR__ . '/../data/articles.sqlite',
+    null,
+    null,
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]
+);
 
-    HttpFetcher::class => function () {
-        return new HttpFetcher();
-    },
+$container = new Container();
 
-    ArticleContentExtractor::class => function () {
-        return new ArticleContentExtractor();
-    },
+/* Infrastructure */
 
-    ArticleRepository::class => function ($c) {
-        return new ArticleRepository($c[PDO::class]);
-    },
+$container->set(
+    HttpFetcher::class,
+    fn() =>
+    new HttpFetcher()
+);
 
-    ArticleService::class => function ($c) {
-        return new ArticleService(
-            $c[HttpFetcher::class],
-            $c[ArticleContentExtractor::class],
-            $c[ArticleRepository::class]
-        );
-    },
-];
+$container->set(
+    ArticleContentExtractor::class,
+    fn() =>
+    new ArticleContentExtractor()
+);
+
+$container->set(
+    ArticleRepository::class,
+    fn() =>
+    new ArticleRepository($pdo)
+);
+
+/* Application */
+
+$container->set(
+    ArticleService::class,
+    fn(Container $c) =>
+    new ArticleService(
+        $c->get(HttpFetcher::class),
+        $c->get(ArticleContentExtractor::class),
+        $c->get(ArticleRepository::class)
+    )
+);
+
+return $container;
