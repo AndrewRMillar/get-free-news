@@ -80,7 +80,7 @@
             <template x-if="$store.state.currentArticle">
                 <div x-show="$store.state.currentArticle" class="mt-6">
                     <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1>
-                    <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h2:text-2xl prose-p:py-2"
+                    <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h3:text-white prose-h3:text-xl prose-h2:text-2xl prose-p:py-2"
                         x-html="$store.state.currentArticle.content"></div>
                 </div>
             </template>
