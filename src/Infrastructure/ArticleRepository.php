@@ -46,6 +46,14 @@ final class ArticleRepository implements ArticleRepositoryInterface
         );
     }
 
+    /* TODO: perhpas a better method wouold be to add a that checks if the article was added correctly, perhaps also?    */
+    public function fetchCount(): int
+    {
+        $stmt = $this->pdo->query('SELECT COUNT(*) as count FROM articles');
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int) $row['count'];
+    }
+
     public function findById(int $id): ?Article
     {
         $stmt = $this->pdo->prepare(
