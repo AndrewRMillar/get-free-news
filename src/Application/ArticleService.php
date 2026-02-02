@@ -7,6 +7,7 @@ namespace Application;
 use Infrastructure\ArticleRepository;
 use Infrastructure\HttpFetcher;
 use Application\ArticleContentExtractor;
+use Config\Paths;
 use Domain\Model\Article;
 use Psr\Log\LoggerInterface;
 use Monolog\Logger;
@@ -19,11 +20,11 @@ final class ArticleService
 
     public function __construct(
         private HttpFetcher $fetcher,
-        private ArticleContentExtractor $extractor,
+        private ArticleContentExtractor $contentExtractor,
         private ArticleRepository $repository
     ) {
         $logger = new Logger('article_extractor');
-        $logger->pushHandler(new StreamHandler($this->getLogPath(), Level::Debug));
+        $logger->pushHandler(new StreamHandler(Paths::DEBUG_LOG, Level::Debug));
 
         $this->logger = $logger;
     }
@@ -39,7 +40,7 @@ final class ArticleService
             return false;
         }
 
-        [$title, $content] = $this->extractor->extract($html, $url);
+        [$title, $content] = $this->contentExtractor->extract($html, $url);
 
         $article = new Article(
             0,
@@ -59,19 +60,5 @@ final class ArticleService
         }
 
         return $content;
-    }
-
-    public function getLogPath(): string
-    {
-        $logDir = dirname(__DIR__) . '/log';
-
-        if (!is_dir($logDir)) {
-            mkdir($logDir, 0775, true);
-            chmod($logDir, 0775);
-        }
-
-        $logFile = $logDir . '/debug.log';
-
-        return $logFile;
     }
 }

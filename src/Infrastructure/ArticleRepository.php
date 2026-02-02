@@ -8,7 +8,6 @@ use Domain\Model\Article;
 use Domain\Repository\ArticleRepositoryInterface;
 use PDO;
 
-// TODO: implement a sqlite database storage
 final class ArticleRepository implements ArticleRepositoryInterface
 {
     public function __construct(private PDO $pdo) {}

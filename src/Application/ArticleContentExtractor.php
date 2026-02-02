@@ -61,7 +61,7 @@ final class ArticleContentExtractor
         $baseUrl = $parsed['scheme'] . '://' . $parsed['host'];
 
         // Get the title and possible hero image
-        [$title, $titleHtml] = $this->extractHeader($xpath, $baseUrl);
+        [$title, $titleHtml] = $this->extractHeader($xpath);
 
         $metaHtml = $this->extractPublishedDate($xpath);
 
@@ -85,7 +85,7 @@ final class ArticleContentExtractor
         return [$title, $articleHtml];
     }
 
-    private function extractHeader(DOMXPath $xpath, string $baseUrl): array
+    private function extractHeader(DOMXPath $xpath): array
     {
         $title = null;
         $titleHtml = '';

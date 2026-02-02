@@ -86,6 +86,14 @@
             </template>
         </div>
 
+        <div class="links">
+            <ul class="flex gap-4 w-1/2 flex-wrap">
+                <li x-for="link in $store.state.links" :key="link.url">
+                    <a :href="link.url" x-text="link.title"></a>
+                </li>
+            </ul>
+        </div>
+
     </main>
     <script>
         document.addEventListener('alpine:init', () => {
@@ -93,6 +101,7 @@
                 articles: [],
                 currentArticle: null,
                 initiated: false,
+                links: null,
                 init() {
                     if (this.initiated) return;
                     this.initiated = true;
@@ -103,6 +112,9 @@
                         this.articles.unshift(article);
                     }
                     this.currentArticle = article;
+                },
+                getLinks() {
+                    return this.links || [];
                 }
             })
         })

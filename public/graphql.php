@@ -62,6 +62,15 @@ $articleType = new ObjectType([
     ],
 ]);
 
+$linkType = new ObjectType([
+    'name' => 'Link',
+    'fields' => [
+        'date' => Type::string(),
+        'url' => Type::string(),
+        'title' => Type::string(),
+    ],
+]);
+
 $queryType = new ObjectType([
     'name' => 'Query',
     'fields' => [
@@ -77,6 +86,11 @@ $queryType = new ObjectType([
         'articles' => [
             'type' => Type::listOf($articleType),
             'resolve' => fn() => $repository->findAll(),
+        ],
+
+        'links' => [
+            'type' => Type::listOf($linkType),
+            'resolve' => fn() => $articleService->fetchAndSaveLinks([]),
         ],
     ],
 ]);
