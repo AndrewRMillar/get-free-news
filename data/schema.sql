@@ -1,0 +1,15 @@
+-- Create articles table
+CREATE TABLE IF NOT EXISTS articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create links table
+CREATE TABLE IF NOT EXISTS links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TIMESTAMP,
+    links TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
