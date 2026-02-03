@@ -7,8 +7,12 @@
         "monolog/monolog": "^3.10"
     },
     "autoload": {
-        "classmap": [
-            "src"
-        ]
+        "psr-4": {
+            "Application\\": "src/Application/",
+            "Infrastructure\\": "src/Infrastructure/",
+            "Domain\\": "src/Domain/",
+            "Shared\\": "Shared/",
+            "Config\\": "src/Config/"
+        }
     }
 }
