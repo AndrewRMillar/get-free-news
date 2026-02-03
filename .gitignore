@@ -5,5 +5,5 @@
 !/composer.json
 node_modules/
 vendor/
-log/
+logs/
 css/app.css
