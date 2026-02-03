@@ -6,4 +6,5 @@
 node_modules/
 vendor/
 logs/
+data/articles.sqlite
 css/app.css
