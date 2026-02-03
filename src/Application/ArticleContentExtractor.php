@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Monolog\Logger;
 use Monolog\Level;
 use Monolog\Handler\StreamHandler;
+use Config\Paths;
 use DOMDocument;
 use DOMXPath;
 use DOMElement;
@@ -25,10 +26,8 @@ final class ArticleContentExtractor
             return;
         }
 
-        $logFile = realpath(__DIR__ . '/../../log') . '/debug.log';
-
         $logger = new Logger('article_extractor');
-        $logger->pushHandler(new StreamHandler($logFile, Level::Debug));
+        $logger->pushHandler(new StreamHandler(Paths::DEBUG_LOG, Level::Debug));
 
         $this->logger = $logger;
 
