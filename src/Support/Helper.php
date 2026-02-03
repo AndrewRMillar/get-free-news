@@ -38,4 +38,14 @@ final class Helper
     {
         return preg_replace('/\s+/', ' ', trim($html));
     }
+
+    public static function limitStringLength(string $string, $limit = 100): string
+    {
+        if (mb_strlen($string) <= $limit) {
+            return $string;
+        }
+
+        $ingekort = mb_substr($string, 0, $limit);
+        return rtrim($ingekort) . '...';
+    }
 }
