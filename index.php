@@ -86,11 +86,23 @@
             </template>
         </div>
 
-        <div class="links">
-            <ul class="flex gap-4 w-1/2 flex-wrap">
-                <li x-for="link in $store.state.links" :key="link.url">
-                    <a :href="link.url" x-text="link.title"></a>
-                </li>
+        <div x-data="linkList()">
+            <button
+                @click="getLinks"
+                class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md font-semibold text-white hover:bg-indigo-400">
+                Haal links op
+            </button>
+
+            <ul class="mt-4 space-y-2">
+                <template x-for="link in links" :key="link.url">
+                    <li>
+                        <a @click="getArticle"
+                            :data-href="link.url"
+                            target="_blank"
+                            class="text-blue-400 hover:underline"
+                            x-text="link.title"></a>
+                    </li>
+                </template>
             </ul>
         </div>
 
@@ -112,9 +124,6 @@
                         this.articles.unshift(article);
                     }
                     this.currentArticle = article;
-                },
-                getLinks() {
-                    return this.links || [];
                 }
             })
         })
@@ -259,6 +268,48 @@ query GetArticle($id: Int!) {
                     const json = await res.json();
 
                     Alpine.store('state').currentArticle = json.data.article;
+                }
+            };
+        }
+    </script>
+    <script>
+        function linkList() {
+            return {
+                links: [],
+                init() {
+                    this.getLinks();
+                },
+                getArticle(event) {
+
+                },
+                async getLinks() {
+                    const query = `
+query HomepageLinks($limit: Int!) {
+    homepageLinks(limit: $limit) {
+        title
+        url
+    }
+}
+`;
+
+                    const res = await fetch('/public/graphql.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': window.CSRF_TOKEN
+                        },
+                        body: JSON.stringify({
+                            query,
+                            variables: {
+                                limit: 50
+                            }
+                        })
+                    });
+
+                    const json = await res.json();
+
+                    console.log(res, res.json);
+                    this.links = json.data.homepageLinks;
                 }
             };
         }

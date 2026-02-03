@@ -6,6 +6,13 @@ use Infrastructure\HttpFetcher;
 use Infrastructure\ArticleRepository;
 use Application\ArticleContentExtractor;
 use Application\ArticleService;
+use Application\HomepageLinkExtractor;
+use Application\LinksService;
+use Psr\Log\LoggerInterface;
+use Monolog\Logger;
+use Monolog\Level;
+use Config\Paths;
+use Monolog\Handler\StreamHandler;
 use Shared\Container;
 
 require_once __DIR__ . '/../Shared/Container.php';
@@ -19,6 +26,9 @@ $pdo = new PDO(
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]
 );
+
+$logger = new Logger('article_extractor');
+$logger->pushHandler(new StreamHandler(Paths::DEBUG_LOG, Level::Debug));
 
 $container = new Container();
 
@@ -42,6 +52,12 @@ $container->set(
     new ArticleRepository($pdo)
 );
 
+$container->set(
+    HomepageLinkExtractor::class,
+    fn() =>
+    new HomepageLinkExtractor($logger)
+);
+
 /* Application */
 
 $container->set(
@@ -51,6 +67,15 @@ $container->set(
         $c->get(HttpFetcher::class),
         $c->get(ArticleContentExtractor::class),
         $c->get(ArticleRepository::class)
+    )
+);
+
+$container->set(
+    LinksService::class,
+    fn(Container $c) =>
+    new LinksService(
+        $c->get(HttpFetcher::class),
+        $c->get(HomepageLinkExtractor::class),
     )
 );
 

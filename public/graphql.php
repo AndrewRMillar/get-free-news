@@ -10,7 +10,10 @@ use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Error\UserError;
 use Application\ArticleService;
+use Application\HomepageLinkExtractor;
+use Application\LinksService;
 use Application\ArticleException;
+use Infrastructure\HttpFetcher;
 use Infrastructure\ArticleRepository;
 
 $container = require __DIR__ . '/container.php';
@@ -41,9 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /**-------------------------------------------------
  * Services
  * ------------------------------------------------- */
-$repository = $container->get(ArticleRepository::class);
+$articleRepository = $container->get(ArticleRepository::class);
 $articleService = $container->get(ArticleService::class);
-
+$homepageLinkExtractor = $container->get(HomepageLinkExtractor::class);
+$linksService = $container->get(LinksService::class);
+$fetcher = $container->get(HttpFetcher::class);
 
 /**-------------------------------------------------
  * GraphQL Types
@@ -62,13 +67,12 @@ $articleType = new ObjectType([
     ],
 ]);
 
-$linkType = new ObjectType([
-    'name' => 'Link',
+$homepageLinkType = new ObjectType([
+    'name' => 'HomepageLink',
     'fields' => [
-        'date' => Type::string(),
-        'url' => Type::string(),
         'title' => Type::string(),
-    ],
+        'url' => Type::string(),
+    ]
 ]);
 
 $queryType = new ObjectType([
@@ -80,17 +84,34 @@ $queryType = new ObjectType([
                 'id' => Type::nonNull(Type::int()),
             ],
             'resolve' => fn($root, array $args) =>
-            $repository->findById($args['id']),
+            $articleRepository->findById($args['id']),
         ],
 
         'articles' => [
             'type' => Type::listOf($articleType),
-            'resolve' => fn() => $repository->findAll(),
+            'resolve' => fn() => $articleRepository->findAll(),
         ],
 
-        'links' => [
-            'type' => Type::listOf($linkType),
-            'resolve' => fn() => $articleService->fetchAndSaveLinks([]),
+        'homepageLinks' => [
+            'type' => Type::listOf($homepageLinkType),
+            'args' => [
+                'limit' => [
+                    'type' => Type::int(),
+                    'defaultValue' => 50,
+                ],
+            ],
+            'resolve' => function ($root, $args) use ($fetcher, $homepageLinkExtractor) {
+                $html = $fetcher->fetch(HomepageLinkExtractor::HOMEPAGE_URL);
+
+                if (!$html) {
+                    throw new UserError('Kon homepage niet laden');
+                }
+
+                return $homepageLinkExtractor->extract(
+                    $html,
+                    $args['limit']
+                );
+            },
         ],
     ],
 ]);
@@ -103,7 +124,7 @@ $mutationType = new ObjectType([
             'args' => [
                 'url' => Type::nonNull(Type::string()),
             ],
-            'resolve' => function ($root, array $args) use ($articleService, $repository) {
+            'resolve' => function ($root, array $args) use ($articleService, $articleRepository) {
                 try {
                     $content = $articleService->fetchAndSave($args['url']);
 
@@ -111,7 +132,7 @@ $mutationType = new ObjectType([
                         throw new ArticleException('Could not read article.');
                     }
 
-                    return $repository->findLast();
+                    return $articleRepository->findLast();
                 } catch (ArticleException $e) {
                     throw new UserError(
                         $e->getMessage(),
