@@ -38,7 +38,7 @@
                 <input x-model="url" type="url" id="url" required placeholder="Plak hier de artikel-URL…"
                     class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
 
-                <button @click.prevent="submit" :disabled="loading"
+                <button @click.prevent="submit" :disabled="loading" id="get-article"
                     class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md leading-6 font-semibold text-white transition duration-150 ease-in-out hover:bg-indigo-400">
                     <span x-show="!loading">Lees</span>
                     <span x-show="loading" class="inline-flex items-center">
@@ -79,7 +79,7 @@
             <!-- Result -->
             <template x-if="$store.state.currentArticle">
                 <div x-show="$store.state.currentArticle" class="mt-6">
-                    <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1>
+                    <!-- <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1> -->
                     <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h3:text-white prose-h3:text-xl prose-h2:text-2xl prose-p:py-2"
                         x-html="$store.state.currentArticle.content"></div>
                 </div>
@@ -94,13 +94,10 @@
             </button>
 
             <ul class="mt-4 space-y-2">
-                <template x-for="link in links" :key="link.url">
+                <template x-for="link in links">
                     <li>
-                        <a @click="getArticle"
-                            :data-href="link.url"
-                            target="_blank"
-                            class="text-blue-400 hover:underline"
-                            x-text="link.title"></a>
+                        <a @click="getArticle(link)" :data-href="link.url" x-text="link.title"
+                            class="text-blue-400 hover:underline cursor-pointer" :key="link.url"></a>
                     </li>
                 </template>
             </ul>
@@ -114,6 +111,8 @@
                 currentArticle: null,
                 initiated: false,
                 links: null,
+                url: '',
+                title: '',
                 init() {
                     if (this.initiated) return;
                     this.initiated = true;
@@ -132,12 +131,15 @@
     <script>
         function articleReader() {
             return {
-                url: '',
+                url: null,
                 loading: false,
                 error: null,
 
                 async submit() {
-                    if (!this.url) {
+                    console.log(Alpine.store('state').url, Alpine.store('state').title);
+                    let url = Alpine.store('state').url;
+                    if (!url) {
+                        console.log('there is no url', url);
                         this.error = 'Voer een geldige URL in.';
                         return;
                     }
@@ -167,13 +169,13 @@ mutation FetchArticle($url: String!) {
                             body: JSON.stringify({
                                 query,
                                 variables: {
-                                    url: this.url
+                                    url: url
                                 }
                             })
                         });
 
                         const json = await res.json();
-                        // console.log('response', json, json.data.fetchArticle);
+                        console.log('response', json.data);
 
                         if (json.errors) {
                             this.showError(json.errors[0].message);
@@ -276,11 +278,17 @@ query GetArticle($id: Int!) {
         function linkList() {
             return {
                 links: [],
+                formInputElement: document.getElementById('url'),
+                formSubmitButtonElement: document.getElementById('get-article'),
                 init() {
                     this.getLinks();
                 },
-                getArticle(event) {
-
+                getArticle(link) {
+                    console.log(link.url, link.title);
+                    console.log('getArticle');
+                    Alpine.store('state').url = link.url;
+                    Alpine.store('state').title = link.title;
+                    this.formSubmitButtonElement.click();
                 },
                 async getLinks() {
                     const query = `
@@ -307,8 +315,6 @@ query HomepageLinks($limit: Int!) {
                     });
 
                     const json = await res.json();
-
-                    console.log(res, res.json);
                     this.links = json.data.homepageLinks;
                 }
             };
