@@ -10,9 +10,14 @@ use PDO;
 
 final class ArticleRepository implements ArticleRepositoryInterface
 {
-    public function __construct(private PDO $pdo) {}
+    private int $articleCount;
 
-    public function save(Article $article): void
+    public function __construct(private PDO $pdo)
+    {
+        $this->articleCount = $this->fetchCount();
+    }
+
+    public function save(Article $article): bool
     {
         $stmt = $this->pdo->prepare('
             INSERT INTO articles (id, title, url, content, publication_date)
@@ -27,6 +32,9 @@ final class ArticleRepository implements ArticleRepositoryInterface
             ':content' => $article->content,
             ':publication_date' => $article->publishedAt,
         ]);
+
+        // Was a new article saved?
+        return $this->articleCount !== $this->fetchCount();
     }
 
     public function findAll(): array

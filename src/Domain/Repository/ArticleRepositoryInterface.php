@@ -8,7 +8,7 @@ use Domain\Model\Article;
 
 interface ArticleRepositoryInterface
 {
-    public function save(Article $article): void;
+    public function save(Article $article): bool;
     public function findAll(): array;
     public function findById(int $id): ?Article;
 }
