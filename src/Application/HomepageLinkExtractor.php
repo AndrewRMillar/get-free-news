@@ -41,7 +41,11 @@ final class HomepageLinkExtractor
                 continue;
             }
 
-            $title = $this->stripTitle($node->getAttribute('aria-label') ?: 'Geen titel');
+            $title = $this->stripTitle($node->getAttribute('aria-label'));
+
+            if (!$title) {
+                continue;
+            }
 
             $links[] = [
                 'title' => $title,
@@ -53,17 +57,20 @@ final class HomepageLinkExtractor
             }
         }
 
-        $this->logger->info('Homepage links extracted', [
+        $this->logger->info('Homepage links extracted (' . __LINE__ . ' ' . __FILE__ . ')', [
             'count' => count($links)
         ]);
 
         return $links;
     }
 
-    private function stripTitle(string $title): string
+    private function stripTitle(string $title): ?string
     {
-        preg_match('/>([^<]+<)/', $title, $matches);
+        preg_match('/>([^<]+)</', $title, $matches);
+        if ($matches && $matches[1]) {
+            return $matches[1];
+        }
 
-        return $matches[1];
+        return null;
     }
 }
