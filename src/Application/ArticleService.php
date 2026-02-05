@@ -29,18 +29,19 @@ final class ArticleService
         $this->logger = $logger;
     }
 
-    public function fetchAndSave(string $url): string|false
+    public function fetchAndSave(string $url): ?Article
     {
-        $this->logger->info('Fetching article', ['url' => $url]);
-        $count = $this->repository->fetchCount();
+        $this->logger->info('Fetching article (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
 
         $html = $this->fetcher->fetch($url);
         if (!$html) {
-            $this->logger->warning('Failed to fetch article', ['url' => $url]);
-            return false;
+            $this->logger->warning('Failed to fetch article (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
+            return null;
         }
 
         [$title, $content] = $this->contentExtractor->extract($html, $url);
+
+        $this->logger->info('Article extraction complete (' . __LINE__ . ' ' . __FILE__ . ')', ['title' => mb_substr($title, 0, 25)]);
 
         $article = new Article(
             0,
@@ -50,15 +51,14 @@ final class ArticleService
             date('c')
         );
 
-        $this->repository->save($article);
+        $newArticle = $this->repository->save($article);
 
-        $countAfter = $this->repository->fetchCount();
-        if ($countAfter > $count) {
-            $this->logger->info('Article saved successfully', ['url' => $url]);
+        if ($newArticle) {
+            $this->logger->info('Article saved successfully (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
         } else {
-            $this->logger->info('Article not saved', ['url' => $url]);
+            $this->logger->info('Article not saved, already in database (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
         }
 
-        return $content;
+        return $article;
     }
 }

@@ -31,19 +31,19 @@ final class ArticleContentExtractor
 
         $this->logger = $logger;
 
-        $this->logger->info('Logger initialized successfully');
+        $this->logger->info('Logger initialized successfully (' . __LINE__ . ' ' . __FILE__ . ')');
     }
 
 
     public function extract(string $html, string $url): ?array
     {
-        $this->logger->info('Starting article extraction', ['url' => $url]);
+        $this->logger->info('Starting article extraction (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
 
         libxml_use_internal_errors(true);
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         if (!$dom->loadHTML('<?xml encoding="utf-8" ?>' . $html)) {
-            $this->logger->error('Failed to load HTML');
+            $this->logger->error('Failed to load HTML (' . __LINE__ . ' ' . __FILE__ . ')');
             return null;
         }
 
@@ -53,7 +53,7 @@ final class ArticleContentExtractor
 
         $parsed = parse_url($url);
         if (!$parsed || empty($parsed['scheme']) || empty($parsed['host'])) {
-            $this->logger->error('Invalid URL structure', ['url' => $url]);
+            $this->logger->error('Invalid URL structure (' . __LINE__ . ' ' . __FILE__ . ')', ['url' => $url]);
             return null;
         }
 
@@ -66,7 +66,7 @@ final class ArticleContentExtractor
 
         $section = $this->extractArticleSection($xpath);
         if (!$section) {
-            $this->logger->error('Failed to extract article section');
+            $this->logger->error('Failed to extract article section (' . __LINE__ . ' ' . __FILE__ . ')');
             return null;
         }
 
@@ -79,7 +79,7 @@ final class ArticleContentExtractor
             . $dom->saveHTML($section)
             . '</article>';
 
-        $this->logger->info('Article extraction complete');
+        $this->logger->info('Article extraction complete (' . __LINE__ . ' ' . __FILE__ . ')');
 
         return [$title, $articleHtml];
     }
@@ -108,6 +108,7 @@ final class ArticleContentExtractor
                 $titleHtml .= htmlspecialchars($src) . '"';
 
                 if ($title) {
+                    $this->logger->info('Found title(' . __LINE__ . ' ' . __FILE__ . ')', ['title' => mb_substr($title, 0, 25)]);
                     $titleHtml .= ' alt="' . htmlspecialchars($title) . '"';
                 }
 
@@ -115,7 +116,7 @@ final class ArticleContentExtractor
             }
         }
 
-        $this->logger->info('Og image image found', ['src' => (bool) $src]);
+        $this->logger->info('Og image image found (' . __LINE__ . ' ' . __FILE__ . ')', ['src' => (bool) $src]);
 
         return [$title, $titleHtml];
     }
@@ -130,32 +131,32 @@ final class ArticleContentExtractor
 
         try {
             $date = new DateTime($meta->getAttribute('content'));
-            $this->logger->info('Published time extracted', ['published_time' => $date->format(DateTime::ATOM)]);
+            $this->logger->info('Published time extracted (' . __LINE__ . ' ' . __FILE__ . ')', ['published_time' => $date->format(DateTime::ATOM)]);
 
             return '<p class="text-sm text-gray-500">'
                 . 'Gepubliceerd op: ' . htmlspecialchars($date->format('l j F Y - H:i'))
                 . '</p>';
         } catch (Throwable $e) {
-            $this->logger->warning('Invalid published_time format');
+            $this->logger->warning('Invalid published_time format (' . __LINE__ . ' ' . __FILE__ . ')');
             return '';
         }
     }
 
     private function extractArticleSection(DOMXPath $xpath): ?DOMElement
     {
-        $this->logger->info('Start extracting article section');
+        $this->logger->info('Start extracting article section (' . __LINE__ . ' ' . __FILE__ . ')');
         $logMessage = '';
 
         $main = $xpath->query('//main')->item(0);
         if (!$main) {
-            $this->logger->warning('Main element not found');
+            $this->logger->warning('Main element not found (' . __LINE__ . ' ' . __FILE__ . ')');
             return null;
         }
         $logMessage .= 'Found main element. ';
 
         $article = $xpath->query('.//article', $main)->item(0);
         if (!$article) {
-            $this->logger->warning('Article element not found');
+            $this->logger->warning('Article element not found (' . __LINE__ . ' ' . __FILE__ . ')');
             return null;
         }
         $logMessage .= 'Found article element. ';
@@ -167,12 +168,12 @@ final class ArticleContentExtractor
         $logMessage .= 'Searched for section element. ';
 
         if (!$section) {
-            $this->logger->warning('Section element not found');
+            $this->logger->warning('Section element not found (' . __LINE__ . ' ' . __FILE__ . ')');
             return null;
         }
         $logMessage .= 'Found section element. ';
 
-        $this->logger->info($logMessage);
+        $this->logger->info($logMessage . ' (' . __LINE__ . ' ' . __FILE__ . ')');
 
         return $section;
     }
@@ -182,7 +183,7 @@ final class ArticleContentExtractor
         foreach ($xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section) as $node) {
             $node->parentNode?->removeChild($node);
         }
-        $this->logger->info('Cleaned unwanted elements from article section');
+        $this->logger->info('Cleaned unwanted elements from article section (' . __LINE__ . ' ' . __FILE__ . ')');
 
         return $section;
     }
@@ -202,7 +203,7 @@ final class ArticleContentExtractor
                 );
             }
         }
-        $this->logger->info('Fixed relative links in article section');
+        $this->logger->info('Fixed relative links in article section (' . __LINE__ . ' ' . __FILE__ . ')');
 
         return $section;
     }
