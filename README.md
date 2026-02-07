@@ -1,4 +1,4 @@
-# Read the volkskrant articles
+# Read the volkskrant articles [out of date]
 
 A news article reader application that fetches, extracts, and serves articles through a GraphQL API. Built with PHP, it provides a clean, distraction-free interface for reading articles from at the moment only de Volkskrant. I'm not sure if other news paper sites can be used in the same way.
 
