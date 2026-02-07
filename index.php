@@ -5,6 +5,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Reader Mode</title>
+    <link rel="apple-touch-icon-precomposed" sizes="192x192" href="https://volkskrant.nl/static/apple-touch-icon-192x192.png">
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="https://volkskrant.nl/static/apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon-precomposed" sizes="167x167" href="https://volkskrant.nl/static/apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="https://volkskrant.nl/static/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://volkskrant.nl/static/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="128x128" href="https://volkskrant.nl/static/apple-touch-icon-128x128.png">
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://volkskrant.nl/static/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://volkskrant.nl/static/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="https://volkskrant.nl/static/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://volkskrant.nl/static/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon-precomposed" sizes="60x60" href="https://volkskrant.nl/static/apple-touch-icon-60x60.png">
+    <link rel="icon" type="image/png" href="https://volkskrant.nl/static/favicon-196x196.png" sizes="196x196">
+    <link rel="icon" type="image/png" href="https://volkskrant.nl/static/favicon-128x128.png" sizes="128x128">
+    <link rel="icon" type="image/png" href="https://volkskrant.nl/static/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="https://volkskrant.nl/static/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://volkskrant.nl/static/favicon-16x16.png" sizes="16x16">
+
     <link rel="stylesheet" href="css/app.css">
     <script>
         window.CSRF_TOKEN = "<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) ?>";
@@ -117,7 +134,7 @@
                     if (this.initiated) return;
                     this.initiated = true;
                 },
-                addArticle(article) {
+                showArticle(article) {
                     // prevent duplicates
                     if (!this.articles.find(a => a.id === article.id)) {
                         this.articles.unshift(article);
@@ -181,7 +198,7 @@ mutation FetchArticle($url: String!) {
                             this.showError(json.errors[0].message);
                             return;
                         }
-                        Alpine.store('state').addArticle(json.data.fetchArticle);
+                        Alpine.store('state').showArticle(json.data.fetchArticle);
                     } catch (e) {
                         this.showError('Kan geen verbinding maken met de server.');
                     } finally {
