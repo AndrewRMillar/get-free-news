@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace puclic;
+
 use Infrastructure\HttpFetcher;
 use Infrastructure\ArticleRepository;
 use Application\ArticleContentExtractor;
@@ -12,10 +14,18 @@ use Psr\Log\LoggerInterface;
 use Monolog\Logger;
 use Monolog\Level;
 use Config\Paths;
+use Infrastructure\GraphQL\Controller;
+use Infrastructure\GraphQL\SchemaBuilder;
+use Infrastructure\GraphQL\Type\ArticleType;
+use Infrastructure\GraphQL\Type\LinkType;
+use Infrastructure\Security\CsrfGuard;
+use Domain\Repository\ArticleRepositoryInterface;
 use Monolog\Handler\StreamHandler;
 use Shared\Container;
+use PDO;
 
 require_once __DIR__ . '/../Shared/Container.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 $pdo = new PDO(
     'sqlite:' . __DIR__ . '/../data/articles.sqlite',
@@ -47,9 +57,33 @@ $container->set(
 );
 
 $container->set(
+    CsrfGuard::class,
+    fn() =>
+    new CsrfGuard()
+);
+
+$container->set(
+    ArticleType::class,
+    fn() =>
+    new ArticleType()
+);
+
+$container->set(
+    LinkType::class,
+    fn() =>
+    new LinkType()
+);
+
+$container->set(
     ArticleRepository::class,
     fn() =>
     new ArticleRepository($pdo)
+);
+
+$container->set(
+    ArticleRepositoryInterface::class,
+    fn() =>
+    new ArticleRepositoryInterface($pdo)
 );
 
 $container->set(
@@ -59,6 +93,18 @@ $container->set(
 );
 
 /* Application */
+$container->set(
+    SchemaBuilder::class,
+    fn(Container $c) =>
+    new SchemaBuilder(
+        $c->get(ArticleType::class),
+        $c->get(ArticleRepository::class),
+        $c->get(ArticleService::class),
+        $c->get(LinkType::class),
+        $c->get(HttpFetcher::class),
+        $c->get(HomepageLinkExtractor::class)
+    )
+);
 
 $container->set(
     ArticleService::class,
@@ -77,6 +123,14 @@ $container->set(
         $c->get(HttpFetcher::class),
         $c->get(HomepageLinkExtractor::class),
     )
+);
+
+$container->set(
+    Controller::class,
+    fn(Container $c) =>
+    new Controller(
+        $c->get(SchemaBuilder::class)
+    ),
 );
 
 return $container;
