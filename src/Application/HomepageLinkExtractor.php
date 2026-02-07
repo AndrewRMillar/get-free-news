@@ -57,7 +57,7 @@ final class HomepageLinkExtractor
             }
         }
 
-        $this->logger->info('Homepage links extracted (' . __LINE__ . ' ' . __FILE__ . ')', [
+        $this->logger->info('Homepage links extracted (' . __LINE__ . ' ' . __CLASS__ . ')', [
             'count' => count($links)
         ]);
 
