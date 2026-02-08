@@ -52,21 +52,12 @@
         <div x-data="articleReader()" class="mb-5 py-5">
 
             <div class="w-full flex rounded-md gap-2">
-                <input type="url" id="url" required placeholder="Plak hier de artikel-URL…"
+                <input type="url" id="url" x-model="url" required placeholder="Plak hier de artikel-URL…"
                     class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
 
-                <button @click.prevent="submit" :disabled="loading" id="get-article"
+                <button @click.prevent="submit" id="get-article"
                     class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md leading-6 font-semibold text-white transition duration-150 ease-in-out hover:bg-indigo-400">
-                    <span x-show="!loading">Lees</span>
-                    <span x-show="loading" class="inline-flex items-center">
-                        <svg class="mr-3 -ml-1 size-5 animate-spin text-white"
-                            xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Laden
-                    </span>
+                    Lees
                 </button>
             </div>
 
@@ -114,7 +105,7 @@
             <ul class="mt-4 space-y-2">
                 <template x-for="link in $store.state.links">
                     <li>
-                        <a @click="getArticle(link)" :data-href="link.url" x-text="link.title"
+                        <a @click="$store.state.getArticle(link.url)" :data-href="link.url" x-text="link.title"
                             class="text-blue-400 hover:underline cursor-pointer" :key="link.url"></a>
                     </li>
                 </template>
@@ -130,13 +121,26 @@
                 links: [],
                 url: '',
                 title: '',
+                state: Alpine.store('state'),
 
                 showArticle(article) {
                     // prevent duplicates
+                    console.log(article);
                     if (!this.articles.find(a => a.id === article.id)) {
                         this.articles.unshift(article);
                     }
                     this.currentArticle = article;
+                },
+                async getArticle(url) {
+                    try {
+                        const data = await graphqlRequest(MUTATION_ARTICLE_GQL, {
+                            url: url
+                        });
+
+                        this.showArticle(data.fetchArticle);
+                    } catch (e) {
+                        console.error('Failed to load links', e);
+                    }
                 },
                 showError(message) {
                     this.error = message;
@@ -218,6 +222,7 @@ mutation FetchArticle($url: String!) {
                 if (!res.ok) {
                     const text = await res.text();
                     const message = `Network error (${res.status}): ${text}`;
+                    console.error('graphqlRequest error: ' + message)
                     state.showError(message);
                     throw new Error(message);
                 }
@@ -226,6 +231,7 @@ mutation FetchArticle($url: String!) {
 
                 if (json.errors && json.errors.length) {
                     const message = json.errors.map(e => e.message).join(', ');
+                    console.error('graphqlRequest error: ' + message)
                     state.showError(message);
                     throw new Error(message);
                 }
@@ -234,7 +240,7 @@ mutation FetchArticle($url: String!) {
             } catch (err) {
                 console.error('GraphQL request failed:', err);
                 state.showError(err.message || 'An unknown error occurred.');
-                throw err; // rethrow so callers can handle further if needed
+                throw err;
             }
         }
     </script>
@@ -242,31 +248,20 @@ mutation FetchArticle($url: String!) {
     <script>
         function articleReader() {
             return {
-                urlEl: document.getElementById("url"),
-                loading: false,
                 error: null,
+                url: null,
                 state: Alpine.store('state'),
 
-                async submit(event) {
-                    const url = this.urlEl.value;
-
-                    if (!url) {
-                        console.log('there is no url', url);
+                submit() {
+                    if (!this.url) {
+                        console.log('there is no url', this.url);
                         this.state.showError('Voer een geldige URL in.');
                         return;
                     }
 
-                    try {
-                        const data = await graphqlRequest(MUTATION_ARTICLE_GQL, {
-                            url: url
-                        });
-                        this.state.showArticle(data.article);
-                    } catch (e) {
-                        console.error('Failed to load links', e);
-                    } finally {
-                        this.loading = false;
-                    }
+                    this.state.getArticle(this.url);
                 },
+
             };
         }
     </script>
@@ -286,8 +281,6 @@ mutation FetchArticle($url: String!) {
                         this.state.articles = data.articles;
                     } catch (e) {
                         console.error('Failed to load links', e);
-                    } finally {
-                        console.log('init finaly');
                     }
                 },
 
@@ -310,18 +303,9 @@ mutation FetchArticle($url: String!) {
         function linkList() {
             return {
                 links: [],
-                formInputElement: document.getElementById('url'),
-                formSubmitButtonElement: document.getElementById('get-article'),
                 state: Alpine.store('state'),
                 init() {
                     this.getLinks();
-                },
-                getArticle(link) {
-                    console.log(link.url, link.title);
-                    console.log('getArticle');
-                    this.state.url = link.url;
-                    this.state.title = link.title;
-                    this.formSubmitButtonElement.click();
                 },
                 async getLinks() {
 

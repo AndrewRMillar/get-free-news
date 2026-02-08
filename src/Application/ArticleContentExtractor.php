@@ -123,7 +123,10 @@ final class ArticleContentExtractor
 
     private function extractPublishedDate(DOMXPath $xpath): string
     {
-        $meta = $xpath->query('//meta[@property="article:published_time"]')->item(0);
+        $meta = $xpath->query('//meta[@property="article:published_time"]');
+        if (!$meta = $meta->item(0)) {
+            return '';
+        }
 
         if (!$meta instanceof DOMElement) {
             return '';
@@ -147,24 +150,27 @@ final class ArticleContentExtractor
         $this->logger->info('Start extracting article section (' . __LINE__ . ' ' . __CLASS__ . ')');
         $logMessage = '';
 
-        $main = $xpath->query('//main')->item(0);
-        if (!$main) {
+        $main = $xpath->query('//main');
+        if (!$main = $main->item(0)) {
             $this->logger->warning('Main element not found (' . __LINE__ . ' ' . __CLASS__ . ')');
             return null;
         }
+
         $logMessage .= 'Found main element. ';
 
-        $article = $xpath->query('.//article', $main)->item(0);
-        if (!$article) {
+        $article = $xpath->query('.//article', $main);
+        if (!$article = $article->item(0)) {
             $this->logger->warning('Article element not found (' . __LINE__ . ' ' . __CLASS__ . ')');
             return null;
         }
         $logMessage .= 'Found article element. ';
 
-        $section = $xpath->query('./section', $article)->item(0);
+        $section = $xpath->query('./section', $article);
         if (!$section) {
-            $section = $xpath->query('div[@class*="block-text"]')->item(0);
+            $section = $xpath->query('div[@class*="block-text"]');
         }
+        $section = $section->item(0);
+
         $logMessage .= 'Searched for section element. ';
 
         if (!$section) {
