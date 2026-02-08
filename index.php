@@ -84,14 +84,16 @@
 
             <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
 
-            <select
-                class="bg-amber-50 w-full p-2.5 text-black rounded-md overflow-hidden"
-                @change="load($event.target.value)" id="article-select">
-                <option value="">— kies een artikel —</option>
-                <template x-for="article in $store.state.articles" :key="article.id">
-                    <option :value="article.id" x-text="article.title" class="w-full overflow-hidden"></option>
-                </template>
-            </select>
+            <template x-if=$store.state.articles>
+                <select
+                    class="bg-amber-50 w-full p-2.5 text-black rounded-md overflow-hidden"
+                    @change="load($event.target.value)" id="article-select">
+                    <option value="">— kies een artikel —</option>
+                    <template x-for="article in $store.state.articles" :key="article.id">
+                        <option :value="article.id" x-text="article.title" class="w-full overflow-hidden"></option>
+                    </template>
+                </select>
+            </template>
 
             <!-- Result -->
             <template x-if="$store.state.currentArticle">
@@ -143,6 +145,12 @@
                 }
             })
         })
+    </script>
+    <script>
+        const FETCH_ARTICLE_GQL = ``;
+        const FETCH_ARTICLES_GQL = ``;
+        const FETCH_LINKS_GQL = ``;
+        const MUTATION_ARTICLE_GQL = ``;
     </script>
 
     <script>
