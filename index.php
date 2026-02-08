@@ -81,28 +81,27 @@
         </div>
 
         <div x-data="articleList()" class="my-6">
+            <div x-show="$store.state.articles.length">
+                <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
 
-            <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
-
-            <template x-if=$store.state.articles>
                 <select
                     class="bg-amber-50 w-full p-2.5 text-black rounded-md overflow-hidden"
-                    @change="load($event.target.value)" id="article-select">
-                    <option value="">— kies een artikel —</option>
+                    @change="load($event.target.value)" id="article-select" :data-count="$store.state.articles.length">
+                    <option value="">-- kies een artikel --</option>
                     <template x-for="article in $store.state.articles" :key="article.id">
                         <option :value="article.id" x-text="article.title" class="w-full overflow-hidden"></option>
                     </template>
                 </select>
-            </template>
 
-            <!-- Result -->
-            <template x-if="$store.state.currentArticle">
-                <div x-show="$store.state.currentArticle" class="mt-6">
-                    <!-- <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1> -->
-                    <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h3:text-white prose-h3:text-xl prose-h2:text-2xl prose-p:py-2"
-                        x-html="$store.state.currentArticle.content"></div>
-                </div>
-            </template>
+                <!-- Result -->
+                <template x-if="$store.state.currentArticle">
+                    <div x-show="$store.state.currentArticle" class="mt-6">
+                        <!-- <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1> -->
+                        <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h3:text-white prose-h3:text-xl prose-h2:text-2xl prose-p:py-2"
+                            x-html="$store.state.currentArticle.content"></div>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <div x-data="linkList()">
@@ -142,76 +141,6 @@
                         this.articles.unshift(article);
                     }
                     this.currentArticle = article;
-                }
-            })
-        })
-    </script>
-    <script>
-        const FETCH_ARTICLE_GQL = ``;
-        const FETCH_ARTICLES_GQL = ``;
-        const FETCH_LINKS_GQL = ``;
-        const MUTATION_ARTICLE_GQL = ``;
-    </script>
-
-    <script>
-        function articleReader() {
-            return {
-                url: null,
-                loading: false,
-                error: null,
-
-                async submit() {
-                    console.log(Alpine.store('state').url, Alpine.store('state').title);
-                    let url = Alpine.store('state').url;
-                    if (!url) {
-                        console.log('there is no url', url);
-                        this.error = 'Voer een geldige URL in.';
-                        return;
-                    }
-                    this.loading = true;
-                    this.error = null;
-                    let article = null;
-
-                    const query = String.raw`
-mutation FetchArticle($url: String!) {
-    fetchArticle(url: $url) {
-        id
-        title
-        content
-        publishedAt
-    }
-}
-`;
-
-                    try {
-                        const res = await fetch('public/graphql.php', {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-Token': window.CSRF_TOKEN
-                            },
-                            body: JSON.stringify({
-                                query,
-                                variables: {
-                                    url: url
-                                }
-                            })
-                        });
-
-                        const json = await res.json();
-                        console.log('response', json.data);
-
-                        if (json.errors) {
-                            this.showError(json.errors[0].message);
-                            return;
-                        }
-                        Alpine.store('state').showArticle(json.data.fetchArticle);
-                    } catch (e) {
-                        this.showError('Kan geen verbinding maken met de server.');
-                    } finally {
-                        this.loading = false;
-                    }
                 },
                 showError(message) {
                     this.error = message;
@@ -225,48 +154,11 @@ mutation FetchArticle($url: String!) {
                         this.errorTimeout = null;
                     }, 5000);
                 },
-
-            };
-        }
+            })
+        })
     </script>
-
     <script>
-        function articleList() {
-            return {
-                articles: [],
-                article: null,
-
-                async init() {
-                    console.log('Loading articles...');
-                    const query = String.raw`
-query {
-    articles {
-        id
-        title
-    }
-}
-`;
-
-                    const res = await fetch('public/graphql.php', {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            query
-                        })
-                    });
-
-                    const json = await res.json();
-                    Alpine.store('state').articles = json.data.articles;
-                },
-
-                async load(id) {
-                    if (!id) return;
-
-                    const query = String.raw`
+        const FETCH_ARTICLE_GQL = `
 query GetArticle($id: Int!) {
     article(id: $id) {
         id
@@ -276,25 +168,144 @@ query GetArticle($id: Int!) {
     }
 }
 `;
+        const FETCH_ARTICLES_GQL = `
+query {
+    articles {
+        id
+        title
+    }
+}
+`;
+        const FETCH_LINKS_GQL = `
+query HomepageLinks($limit: Int!) {
+    homepageLinks(limit: $limit) {
+        title
+        url
+    }
+}
+`;
+        const MUTATION_ARTICLE_GQL = `
+mutation FetchArticle($url: String!) {
+    fetchArticle(url: $url) {
+        id
+        title
+        content
+        publishedAt
+    }
+}
+`;
+    </script>
 
-                    const res = await fetch('public/graphql.php', {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            query,
-                            variables: {
-                                id: Number(id)
-                            }
-                        })
-                    });
+    <script>
+        /**
+         * A helper to make GraphQL requests with centralized error handling.
+         * @param {string} query - The GraphQL query string
+         * @param {object} [variables={}] - Optional variables for the query
+         * @returns {Promise<any>} - Returns the parsed data, or throws an error
+         */
+        async function graphqlRequest(query, variables = {}) {
+            const state = Alpine.store('state');
 
-                    const json = await res.json();
+            try {
+                const res = await fetch('/public/graphql.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': window.CSRF_TOKEN
+                    },
+                    body: JSON.stringify({
+                        query,
+                        variables
+                    })
+                });
 
-                    Alpine.store('state').currentArticle = json.data.article;
+                if (!res.ok) {
+                    const text = await res.text();
+                    const message = `Network error (${res.status}): ${text}`;
+                    state.showError(message);
+                    throw new Error(message);
+                }
+
+                const json = await res.json();
+
+                if (json.errors && json.errors.length) {
+                    const message = json.errors.map(e => e.message).join(', ');
+                    state.showError(message);
+                    throw new Error(message);
+                }
+
+                return json.data;
+            } catch (err) {
+                console.error('GraphQL request failed:', err);
+                state.showError(err.message || 'An unknown error occurred.');
+                throw err; // rethrow so callers can handle further if needed
+            }
+        }
+    </script>
+
+    <script>
+        function articleReader() {
+            return {
+                url: null,
+                loading: false,
+                error: null,
+                state: Alpine.store('state'),
+
+                async submit() {
+                    console.log(this.state.url, this.state.title);
+                    const url = this.state.url;
+                    if (!url) {
+                        console.log('there is no url', url);
+                        this.state.showError('Voer een geldige URL in.');
+                        return;
+                    }
+
+                    try {
+                        const article = await graphqlRequest(MUTATION_ARTICLE_GQL, {
+                            url: url
+                        });
+                    } catch (e) {
+                        console.error('Failed to load links', e);
+                    } finally {
+                        this.loading = false;
+                    }
+
+                    this.state.showArticle(article);
+                },
+            };
+        }
+    </script>
+
+    <script>
+        function articleList() {
+            return {
+                articles: [],
+                article: null,
+                state: Alpine.store('state'),
+
+                async init() {
+                    console.log('Loading articles...');
+
+                    try {
+                        this.state.articles = await graphqlRequest(FETCH_ARTICLES_GQL);
+                    } catch (e) {
+                        console.error('Failed to load links', e);
+                    } finally {
+                        console.log('init finaly');
+                    }
+                    console.log(this.state.articles);
+                },
+
+                async load(id) {
+                    if (!id) return;
+
+                    try {
+                        this.state.currentArticle = await graphqlRequest(FETCH_ARTICLE_GQL, {
+                            id: Number(id)
+                        });
+                    } catch (e) {
+                        this.state.showError('Failed to load links', e);
+                    }
                 }
             };
         }
@@ -305,42 +316,26 @@ query GetArticle($id: Int!) {
                 links: [],
                 formInputElement: document.getElementById('url'),
                 formSubmitButtonElement: document.getElementById('get-article'),
+                state: Alpine.store('state'),
                 init() {
                     this.getLinks();
                 },
                 getArticle(link) {
                     console.log(link.url, link.title);
                     console.log('getArticle');
-                    Alpine.store('state').url = link.url;
-                    Alpine.store('state').title = link.title;
+                    this.state.url = link.url;
+                    this.state.title = link.title;
                     this.formSubmitButtonElement.click();
                 },
                 async getLinks() {
-                    const query = `
-query HomepageLinks($limit: Int!) {
-    homepageLinks(limit: $limit) {
-        title
-        url
-    }
-}
-`;
 
-                    const res = await fetch('/public/graphql.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': window.CSRF_TOKEN
-                        },
-                        body: JSON.stringify({
-                            query,
-                            variables: {
-                                limit: 50
-                            }
-                        })
-                    });
-
-                    const json = await res.json();
-                    this.links = json.data.homepageLinks;
+                    try {
+                        this.links = await graphqlRequest(FETCH_LINKS_GQL, {
+                            limit: 50
+                        });
+                    } catch (e) {
+                        console.error('Failed to load links', e);
+                    }
                 }
             };
         }
