@@ -37,7 +37,7 @@ class Controller
             http_response_code(500);
             return json_encode([
                 'errors' => [
-                    ['message' => 'Internal server error'],
+                    ['message' => 'Internal server error: ' . $e->getMessage()],
                 ],
             ]);
         }
