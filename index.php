@@ -52,7 +52,7 @@
         <div x-data="articleReader()" class="mb-5 py-5">
 
             <div class="w-full flex rounded-md gap-2">
-                <input x-model="url" type="url" id="url" required placeholder="Plak hier de artikel-URL…"
+                <input type="url" id="url" required placeholder="Plak hier de artikel-URL…"
                     class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
 
                 <button @click.prevent="submit" :disabled="loading" id="get-article"
@@ -112,7 +112,7 @@
             </button>
 
             <ul class="mt-4 space-y-2">
-                <template x-for="link in links">
+                <template x-for="link in $store.state.links">
                     <li>
                         <a @click="getArticle(link)" :data-href="link.url" x-text="link.title"
                             class="text-blue-400 hover:underline cursor-pointer" :key="link.url"></a>
@@ -127,14 +127,10 @@
             Alpine.store('state', {
                 articles: [],
                 currentArticle: null,
-                initiated: false,
-                links: null,
+                links: [],
                 url: '',
                 title: '',
-                init() {
-                    if (this.initiated) return;
-                    this.initiated = true;
-                },
+
                 showArticle(article) {
                     // prevent duplicates
                     if (!this.articles.find(a => a.id === article.id)) {
@@ -246,14 +242,14 @@ mutation FetchArticle($url: String!) {
     <script>
         function articleReader() {
             return {
-                url: null,
+                urlEl: document.getElementById("url"),
                 loading: false,
                 error: null,
                 state: Alpine.store('state'),
 
-                async submit() {
-                    console.log(this.state.url, this.state.title);
-                    const url = this.state.url;
+                async submit(event) {
+                    const url = this.urlEl.value;
+
                     if (!url) {
                         console.log('there is no url', url);
                         this.state.showError('Voer een geldige URL in.');
@@ -261,16 +257,15 @@ mutation FetchArticle($url: String!) {
                     }
 
                     try {
-                        const article = await graphqlRequest(MUTATION_ARTICLE_GQL, {
+                        const data = await graphqlRequest(MUTATION_ARTICLE_GQL, {
                             url: url
                         });
+                        this.state.showArticle(data.article);
                     } catch (e) {
                         console.error('Failed to load links', e);
                     } finally {
                         this.loading = false;
                     }
-
-                    this.state.showArticle(article);
                 },
             };
         }
@@ -287,22 +282,23 @@ mutation FetchArticle($url: String!) {
                     console.log('Loading articles...');
 
                     try {
-                        this.state.articles = await graphqlRequest(FETCH_ARTICLES_GQL);
+                        const data = await graphqlRequest(FETCH_ARTICLES_GQL);
+                        this.state.articles = data.articles;
                     } catch (e) {
                         console.error('Failed to load links', e);
                     } finally {
                         console.log('init finaly');
                     }
-                    console.log(this.state.articles);
                 },
 
                 async load(id) {
                     if (!id) return;
 
                     try {
-                        this.state.currentArticle = await graphqlRequest(FETCH_ARTICLE_GQL, {
+                        const data = await graphqlRequest(FETCH_ARTICLE_GQL, {
                             id: Number(id)
                         });
+                        this.state.currentArticle = data.article;
                     } catch (e) {
                         this.state.showError('Failed to load links', e);
                     }
@@ -330,9 +326,10 @@ mutation FetchArticle($url: String!) {
                 async getLinks() {
 
                     try {
-                        this.links = await graphqlRequest(FETCH_LINKS_GQL, {
+                        const data = await graphqlRequest(FETCH_LINKS_GQL, {
                             limit: 50
                         });
+                        this.state.links = data.homepageLinks;
                     } catch (e) {
                         console.error('Failed to load links', e);
                     }
