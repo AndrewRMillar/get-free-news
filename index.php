@@ -1,4 +1,35 @@
-<?php require_once __DIR__ . '/public/bootstrap.php'; ?>
+<?php
+
+require_once __DIR__ . '/public/bootstrap.php';
+$shellCmnd = 'php scrape-links.php';
+
+shell_exec($shellCmnd) ?: false;
+
+$folder = __DIR__ . '/scraped-pages';
+$files = scandir($folder);
+$pageLinks = [];
+
+foreach ($files as $file) {
+    if (in_array($file, ['.', '..'])) {
+        continue;
+    }
+
+    $path = "$folder/$file";
+    if (is_dir($path)) {
+        continue;
+    }
+
+    if (pathinfo($file, PATHINFO_EXTENSION) !== 'json') {
+        continue;
+    }
+
+    $name = pathinfo($file, PATHINFO_FILENAME);
+
+    $content = file_get_contents($path);
+
+    $pageLinks[$name] = $content;
+}
+?>
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -49,80 +80,84 @@
             </a>
         </div>
 
-        <div x-data="articleReader()" class="mb-5 py-5">
+        <div
+            x-data="accordionComponent()"
+            x-init="$store.state.parsePageLinks()"
+            class="w-full mx-auto space-y-4">
 
-            <div class="w-full flex rounded-md gap-2">
-                <input type="url" id="url" x-model="url" required placeholder="Plak hier de artikel-URL…"
-                    class="bg-amber-50 w-full p-2.5 text-base text-black border border-neutral-600 rounded-md">
+            <template x-for="(listsByDate, name) in $store.state.linkLists" :key="name">
+                <div class="bg-gray-400 border border-gray-600 rounded-sm shadow-sm overflow-hidden">
 
-                <button @click.prevent="submit" id="get-article"
-                    class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md leading-6 font-semibold text-white transition duration-150 ease-in-out hover:bg-indigo-400">
-                    Lees
-                </button>
-            </div>
+                    <!-- NAME HEADER -->
+                    <button
+                        @click="toggleName(name)"
+                        class="w-full flex items-center justify-between px-6 py-4 text-left font-semibold text-neutral-100 hover:bg-gray-500 transition">
+                        <span x-text="name"></span>
 
-            <template x-if="error">
-                <div
-                    x-show="error"
-                    x-transition.opacity.duration.300ms
-                    class="bg-red-600 text-white p-3 rounded-md mt-4 opacity-100 ease-out"
-                    x-text="error">
+                        <!-- Chevron -->
+                        <svg
+                            class="w-5 h-5 transition-transform duration-300"
+                            :class="isNameOpen(name) ? 'rotate-180' : ''"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- NAME CONTENT -->
+                    <div x-show="isNameOpen(name)" x-collapse class="bg-gray-500">
+
+                        <template x-for="(links, date) in listsByDate" :key="date">
+                            <div class="border-t border-gray-600">
+
+                                <!-- DATE HEADER -->
+                                <button
+                                    @click="toggleDate(name, date)"
+                                    class="w-full flex items-center justify-between px-10 py-3 text-left text-sm font-medium text-neutral-100 hover:bg-gray-500 transition">
+                                    <span x-text="date"></span>
+
+                                    <svg
+                                        class="w-4 h-4 transition-transform duration-300"
+                                        :class="isDateOpen(name, date) ? 'rotate-180' : ''"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                <!-- DATE CONTENT -->
+                                <div x-show="isDateOpen(name, date)" x-collapse>
+                                    <ul class="px-14 pb-4 space-y-2 text-sm">
+                                        <template x-for="link in Object.values(links)" :key="link">
+                                            <li class="list-disc">
+                                                <span @click="$store.state.getArticle(link)"
+                                                    class="text-blue-100 hover:text-blue-200 hover:underline transition"
+                                                    x-text="$store.state.parseLink(link)"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+
+                            </div>
+                        </template>
+
+                    </div>
                 </div>
             </template>
         </div>
-
-        <div x-data="articleList()" class="my-6">
-            <div x-show="$store.state.articles.length">
-                <h2 class="text-xl mb-2">Opgeslagen artikelen</h2>
-
-                <select
-                    class="bg-amber-50 w-full p-2.5 text-black rounded-md overflow-hidden"
-                    @change="load($event.target.value)" id="article-select" :data-count="$store.state.articles.length">
-                    <option value="">-- kies een artikel --</option>
-                    <template x-for="article in $store.state.articles" :key="article.id">
-                        <option :value="article.id" x-text="article.title" class="w-full overflow-hidden"></option>
-                    </template>
-                </select>
-
-                <!-- Result -->
-                <template x-if="$store.state.currentArticle">
-                    <div x-show="$store.state.currentArticle" class="mt-6">
-                        <!-- <h1 class="text-2xl font-bold mb-4" x-text="$store.state.currentArticle.title"></h1> -->
-                        <div class="max-w-full text-white leading-6 text-justify prose prose-h2:text-white prose-h3:text-white prose-h3:text-xl prose-h2:text-2xl prose-p:py-2"
-                            x-html="$store.state.currentArticle.content"></div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <div x-data="linkList()">
-            <button
-                @click="getLinks"
-                class="inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-md font-semibold text-white hover:bg-indigo-400">
-                Haal links op
-            </button>
-
-            <ul class="mt-4 space-y-2">
-                <template x-for="link in $store.state.links">
-                    <li>
-                        <a @click="$store.state.getArticle(link.url)" :data-href="link.url" x-text="link.title"
-                            class="text-blue-400 hover:underline cursor-pointer" :key="link.url"></a>
-                    </li>
-                </template>
-            </ul>
-        </div>
-
     </main>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('state', {
                 articles: [],
                 currentArticle: null,
-                links: [],
+                linkLists: {},
                 url: '',
                 title: '',
-                state: Alpine.store('state'),
-
+                date: '<?= (new DateTime())->format('Y-m-d') ?>',
+                init() {
+                    this.parsePageLinks();
+                },
                 showArticle(article) {
                     // prevent duplicates
                     console.log(article);
@@ -142,20 +177,55 @@
                         console.error('Failed to load links', e);
                     }
                 },
-                showError(message) {
-                    this.error = message;
+                getLinksByName(name) {
+                    const linkList = this.linkLists[name];
+                    if (!linkList) return [];
+                    console.log(Object.values(linkList));
+                    return Object.values(linkList);
+                },
+                parsePageLinks() {
+                    const data = <?= json_encode($pageLinks) ?>;
 
-                    if (this.errorTimeout) {
-                        clearTimeout(this.errorTimeout);
+                    for (const [key, value] of Object.entries(data)) {
+                        this.linkLists[key] = JSON.parse(value);
                     }
-
-                    this.errorTimeout = setTimeout(() => {
-                        this.error = null;
-                        this.errorTimeout = null;
-                    }, 5000);
+                },
+                parseLink(url) {
+                    const path = URL.parse(url).pathname;
+                    const linkPartsArr = path.split('/').filter(part => {
+                        if (part.length) return part
+                    })
+                    const title = linkPartsArr[1].split('~')[0].split('-').join(' ');
+                    return title.charAt(0).toUpperCase() + title.slice(1)
                 },
             })
         })
+    </script>
+    <script>
+        function accordionComponent() {
+            return {
+                openName: null,
+                openDates: {},
+
+                toggleName(name) {
+                    this.openName = this.openName === name ? null : name
+                },
+
+                isNameOpen(name) {
+                    return this.openName === name
+                },
+
+                toggleDate(name, date) {
+                    const key = name
+                    this.openDates[key] =
+                        this.openDates[key] === date ? null : date
+                },
+
+                isDateOpen(name, date) {
+                    return this.openDates[name] === date
+                }
+            }
+        }
     </script>
     <script>
         const FETCH_ARTICLE_GQL = `
@@ -302,13 +372,17 @@ mutation FetchArticle($url: String!) {
     <script>
         function linkList() {
             return {
-                links: [],
+                links: {},
                 state: Alpine.store('state'),
                 init() {
-                    this.getLinks();
+                    this.parsePageLinks();
                 },
+                // parsePageLinks() {
+                //     for (const [key, value] of Object.entries(<?= json_encode($pageLinks) ?>)) {
+                //         this.state.linkLists[key] = JSON.parse(value);
+                //     }
+                // },
                 async getLinks() {
-
                     try {
                         const data = await graphqlRequest(FETCH_LINKS_GQL, {
                             limit: 50
