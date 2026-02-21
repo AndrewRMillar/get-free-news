@@ -6,29 +6,41 @@ namespace Infrastructure;
 
 use Domain\Model\Article;
 use Domain\Repository\ArticleRepositoryInterface;
+use Psr\Log\LoggerInterface;
 use PDO;
 
 final class ArticleRepository implements ArticleRepositoryInterface
 {
-    public function __construct(private PDO $pdo) {}
+    public function __construct(
+        private PDO $pdo,
+        private LoggerInterface $logger
+    ) {}
 
     public function save(Article $article): bool
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO articles (id, title, url, content, publication_date)
-            VALUES (:id, :title, :url, :content, :publication_date)
-            ON CONFLICT(id) DO NOTHING
+            INSERT INTO articles (title, url, content, publication_date)
+            VALUES (:title, :url, :content, :publication_date)
+            ON CONFLICT(url) DO NOTHING
         ');
 
         $executed = $stmt->execute([
-            ':id' => $article->id,
             ':title' => $article->title,
             ':url' => $article->url,
             ':content' => $article->content,
             ':publication_date' => $article->publishedAt,
         ]);
 
-        return $executed && $stmt->rowCount() > 0;
+        // Errorcode '00000': "Execution of the operation was successful and did not result in any type of warning or exception condition."
+        if ($stmt->errorCode() != '00000') {
+            $this->logger->error('PDO error, error info', ['errorCode' => $stmt->errorInfo()]);
+        }
+
+        $newRows = $stmt->rowCount();
+
+        $this->logger->info("$newRows nieuwe articelen in de database (" . __LINE__ . " " . __CLASS__ . ")", ['Articles added' => $newRows]);
+
+        return $executed && $newRows > 0;
     }
 
     public function findAll(): array
@@ -61,7 +73,7 @@ final class ArticleRepository implements ArticleRepositoryInterface
     public function findByUrl(string $url): ?Article
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM article WHERE url = :url LIMIT 1'
+            'SELECT * FROM articles WHERE url = :url LIMIT 1'
         );
         $stmt->execute([':url' => $url]);
 

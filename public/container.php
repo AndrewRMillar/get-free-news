@@ -77,7 +77,7 @@ $container->set(
 $container->set(
     ArticleRepository::class,
     fn() =>
-    new ArticleRepository($pdo)
+    new ArticleRepository($pdo, $logger)
 );
 
 $container->set(

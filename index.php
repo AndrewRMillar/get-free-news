@@ -6,28 +6,15 @@ $shellCmnd = 'php scrape-links.php';
 shell_exec($shellCmnd) ?: false;
 
 $folder = __DIR__ . '/scraped-pages';
-$files = scandir($folder);
+
 $pageLinks = [];
 
-foreach ($files as $file) {
-    if (in_array($file, ['.', '..'])) {
+foreach (glob("$folder/*.json") as $path) {
+    if (is_dir($path) || pathinfo($path, PATHINFO_EXTENSION) !== 'json') {
         continue;
     }
 
-    $path = "$folder/$file";
-    if (is_dir($path)) {
-        continue;
-    }
-
-    if (pathinfo($file, PATHINFO_EXTENSION) !== 'json') {
-        continue;
-    }
-
-    $name = pathinfo($file, PATHINFO_FILENAME);
-
-    $content = file_get_contents($path);
-
-    $pageLinks[$name] = $content;
+    $pageLinks[basename($path, '.json')] = file_get_contents($path);
 }
 ?>
 <!DOCTYPE html>
@@ -57,6 +44,7 @@ foreach ($files as $file) {
     <script>
         window.CSRF_TOKEN = "<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) ?>";
     </script>
+    <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -131,7 +119,7 @@ foreach ($files as $file) {
                                         <template x-for="link in Object.values(links)" :key="link">
                                             <li class="list-disc">
                                                 <span @click="$store.state.getArticle(link)"
-                                                    class="text-blue-100 hover:text-blue-200 hover:underline transition"
+                                                    class="text-blue-100 hover:text-blue-200 hover:underline transition cursor-pointer"
                                                     x-text="$store.state.parseLink(link)"></span>
                                             </li>
                                         </template>
@@ -145,15 +133,19 @@ foreach ($files as $file) {
                 </div>
             </template>
         </div>
+
+        <div x-data>
+            <template x-show="$store.state.currentArticle">
+                <h2 x-text="$store.state.currentArticle.title"></h2>
+                <div x-text="$store.state.currentArticle.content"></div>
+            </template>
+        </div>
     </main>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('state', {
-                articles: [],
                 currentArticle: null,
                 linkLists: {},
-                url: '',
-                title: '',
                 date: '<?= (new DateTime())->format('Y-m-d') ?>',
                 init() {
                     this.parsePageLinks();
@@ -161,18 +153,16 @@ foreach ($files as $file) {
                 showArticle(article) {
                     // prevent duplicates
                     console.log(article);
-                    if (!this.articles.find(a => a.id === article.id)) {
-                        this.articles.unshift(article);
-                    }
                     this.currentArticle = article;
                 },
                 async getArticle(url) {
+                    console.log(url);
                     try {
                         const data = await graphqlRequest(MUTATION_ARTICLE_GQL, {
                             url: url
                         });
-
-                        this.showArticle(data.fetchArticle);
+                        console.log(data);
+                        this.currentArticle = data.fetchArticle;
                     } catch (e) {
                         console.error('Failed to load links', e);
                     }
@@ -198,6 +188,18 @@ foreach ($files as $file) {
                     const title = linkPartsArr[1].split('~')[0].split('-').join(' ');
                     return title.charAt(0).toUpperCase() + title.slice(1)
                 },
+                showError(message) {
+                    this.error = message;
+
+                    if (this.errorTimeout) {
+                        clearTimeout(this.errorTimeout);
+                    }
+
+                    this.errorTimeout = setTimeout(() => {
+                        this.error = null;
+                        this.errorTimeout = null;
+                    }, 5000);
+                },
             })
         })
     </script>
@@ -206,6 +208,7 @@ foreach ($files as $file) {
             return {
                 openName: null,
                 openDates: {},
+                state: Alpine.store('state'),
 
                 toggleName(name) {
                     this.openName = this.openName === name ? null : name
