@@ -1,16 +1,21 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+import typography from '@tailwindcss/typography';
+
+export default {
+    darkMode: 'class',
+
     content: [
-        "./reader.php",
-        "./**/*.php"
+        "./**/*.php",
+        "!./node_modules/**/*.*"
     ],
+
     theme: {
         extend: {
             typography: {
                 DEFAULT: {
                     css: {
                         maxWidth: '800px',
-                        color: '#000',
+                        color: 'inherit', // belangrijk voor dark mode
                         a: {
                             color: '#1d4ed8',
                             textDecoration: 'underline',
@@ -24,10 +29,16 @@ module.exports = {
                         },
                     },
                 },
+                invert: {
+                    css: {
+                        color: 'inherit',
+                    }
+                }
             },
         },
     },
+
     plugins: [
-        require('@tailwindcss/typography'),
+        typography,
     ],
 };
