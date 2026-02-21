@@ -96,7 +96,7 @@ class SchemaBuilder
                                 throw new ArticleException('Could not read article.');
                             }
 
-                            return $this->articleRepository->findLast();
+                            return $this->articleRepository->findByUrl($args['url']);
                         } catch (ArticleException $e) {
                             throw new UserError(
                                 $e->getMessage(),

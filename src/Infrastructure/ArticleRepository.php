@@ -10,12 +10,7 @@ use PDO;
 
 final class ArticleRepository implements ArticleRepositoryInterface
 {
-    private int $articleCount;
-
-    public function __construct(private PDO $pdo)
-    {
-        $this->articleCount = $this->fetchCount();
-    }
+    public function __construct(private PDO $pdo) {}
 
     public function save(Article $article): bool
     {
@@ -25,7 +20,7 @@ final class ArticleRepository implements ArticleRepositoryInterface
             ON CONFLICT(id) DO NOTHING
         ');
 
-        $stmt->execute([
+        $executed = $stmt->execute([
             ':id' => $article->id,
             ':title' => $article->title,
             ':url' => $article->url,
@@ -33,8 +28,7 @@ final class ArticleRepository implements ArticleRepositoryInterface
             ':publication_date' => $article->publishedAt,
         ]);
 
-        // Was a new article saved?
-        return $this->articleCount !== $this->fetchCount();
+        return $executed && $stmt->rowCount() > 0;
     }
 
     public function findAll(): array
@@ -53,20 +47,23 @@ final class ArticleRepository implements ArticleRepositoryInterface
         );
     }
 
-    /* TODO: perhpas a better method wouold be to add a that checks if the article was added correctly, perhaps also? */
-    public function fetchCount(): int
-    {
-        $stmt = $this->pdo->query('SELECT COUNT(*) as count FROM articles');
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return (int) $row['count'];
-    }
-
     public function findById(int $id): ?Article
     {
         $stmt = $this->pdo->prepare(
             'SELECT * FROM articles WHERE id = :id LIMIT 1'
         );
         $stmt->execute([':id' => $id]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $this->mapRowToArticle($row) : null;
+    }
+
+    public function findByUrl(string $url): ?Article
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM article WHERE url = :url LIMIT 1'
+        );
+        $stmt->execute([':url' => $url]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $this->mapRowToArticle($row) : null;
