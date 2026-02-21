@@ -30,8 +30,6 @@ final class ArticleContentExtractor
         $logger->pushHandler(new StreamHandler(Paths::DEBUG_LOG, Level::Debug));
 
         $this->logger = $logger;
-
-        $this->logger->info('Logger initialized successfully (' . __LINE__ . ' ' . __CLASS__ . ')');
     }
 
 
@@ -79,7 +77,7 @@ final class ArticleContentExtractor
             . $dom->saveHTML($section)
             . '</article>';
 
-        $this->logger->info('Article extraction complete (' . __LINE__ . ' ' . __CLASS__ . ')');
+        $this->logger->info('Article extraction complete (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => $url]);
 
         return [$title, $articleHtml];
     }

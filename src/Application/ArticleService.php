@@ -41,8 +41,6 @@ final class ArticleService
 
         [$title, $content] = $this->contentExtractor->extract($html, $url);
 
-        $this->logger->info('Article extraction complete (' . __LINE__ . ' ' . __CLASS__ . ')', ['title' => mb_substr($title, 0, 25)]);
-
         $article = new Article(
             0,
             $title,
