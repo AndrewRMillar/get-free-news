@@ -118,9 +118,9 @@ foreach (glob("$folder/*.json") as $path) {
                                     <ul class="px-14 pb-4 space-y-2 text-sm">
                                         <template x-for="link in Object.values(links)" :key="link">
                                             <li class="list-disc">
-                                                <span @click="$store.state.getArticle(link)"
+                                                <span @click="$store.state.getArticle(link);toggleDate(name,date);toggleName(name)"
                                                     class="text-blue-100 hover:text-blue-200 hover:underline transition cursor-pointer"
-                                                    x-text="$store.state.parseLink(link)"></span>
+                                                    x-text="$store.state.parseLinkToTitle(link)"></span>
                                             </li>
                                         </template>
                                     </ul>
@@ -135,42 +135,36 @@ foreach (glob("$folder/*.json") as $path) {
         </div>
 
         <div x-data>
-            <template x-show="$store.state.currentArticle">
-                <h2 x-text="$store.state.currentArticle.title"></h2>
-                <div x-text="$store.state.currentArticle.content"></div>
+            <template x-if="$store.state.currentArticle">
+                <div>
+                    <div x-html="$store.state.currentArticle.content" class="text-justify"></div>
+                </div>
             </template>
         </div>
     </main>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('state', {
-                currentArticle: null,
+                currentArticle: {},
                 linkLists: {},
                 date: '<?= (new DateTime())->format('Y-m-d') ?>',
                 init() {
                     this.parsePageLinks();
                 },
-                showArticle(article) {
-                    // prevent duplicates
-                    console.log(article);
-                    this.currentArticle = article;
-                },
                 async getArticle(url) {
-                    console.log(url);
                     try {
                         const data = await graphqlRequest(MUTATION_ARTICLE_GQL, {
                             url: url
                         });
-                        console.log(data);
                         this.currentArticle = data.fetchArticle;
                     } catch (e) {
-                        console.error('Failed to load links', e);
+                        console.error('Failed to load artcle', e);
                     }
                 },
                 getLinksByName(name) {
                     const linkList = this.linkLists[name];
                     if (!linkList) return [];
-                    console.log(Object.values(linkList));
+
                     return Object.values(linkList);
                 },
                 parsePageLinks() {
@@ -180,7 +174,7 @@ foreach (glob("$folder/*.json") as $path) {
                         this.linkLists[key] = JSON.parse(value);
                     }
                 },
-                parseLink(url) {
+                parseLinkToTitle(url) {
                     const path = URL.parse(url).pathname;
                     const linkPartsArr = path.split('/').filter(part => {
                         if (part.length) return part

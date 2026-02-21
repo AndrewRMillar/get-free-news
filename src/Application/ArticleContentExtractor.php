@@ -89,7 +89,7 @@ final class ArticleContentExtractor
 
         $titleNode = $xpath->query('//head/title')->item(0);
         if ($titleNode) {
-            $title = trim($titleNode->textContent);
+            $title = trim(explode('|', $titleNode->textContent)[0]);
             $titleHtml .= '<h1 class="text-2xl text-white font-bold text-center my-4">'
                 . htmlspecialchars($title)
                 . '</h1>';
