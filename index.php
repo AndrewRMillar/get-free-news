@@ -44,12 +44,51 @@ foreach (glob("$folder/*.json") as $path) {
     <script>
         window.CSRF_TOKEN = "<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) ?>";
     </script>
+    <script>
+        (function() {
+            const stored = localStorage.getItem('theme');
+
+            if (stored === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (stored === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                // systeemvoorkeur
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
     <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="bg-neutral-800 font-sans text-neutral-100 p-5">
-    <main class="flex flex-col w-[800px] max-w-4xl justify-self-center">
+<body class="bg-neutral-100 dark:bg-neutral-800 font-sans text-neutral-900 dark:text-neutral-100 p-5">
+    <main class="flex flex-col w-[750px] max-w-4xl justify-self-center">
+        <header>
+            <div x-data class="flex gap-2 items-center">
+
+                <button
+                    @click="$store.theme.set('light')"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    ☀️
+                </button>
+
+                <button
+                    @click="$store.theme.set('dark')"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    🌙
+                </button>
+
+                <button
+                    @click="$store.theme.set('system')"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    🖥
+                </button>
+
+            </div>
+        </header>
         <div class="w-full logo mb-5">
             <a title="Naar de homepagina" href="/" class="flex flew-col w-full justify-center">
                 <svg fill="none" height="30" width="244"
@@ -74,12 +113,12 @@ foreach (glob("$folder/*.json") as $path) {
             class="w-full mx-auto space-y-4">
 
             <template x-for="(listsByDate, name) in $store.state.linkLists" :key="name">
-                <div class="bg-gray-400 border border-gray-600 rounded-sm shadow-sm overflow-hidden">
+                <div class="bg-gray-400 border dark:border-gray-600 rounded-sm shadow-sm overflow-hidden">
 
                     <!-- NAME HEADER -->
                     <button
                         @click="toggleName(name)"
-                        class="w-full flex items-center justify-between px-6 py-4 text-left font-semibold text-neutral-100 hover:bg-gray-500 transition">
+                        class="w-full flex items-center justify-between px-6 py-4 text-left font-semibold text-neutral-900 dark:text-neutral-100 hover:bg-gray-500 transition">
                         <span x-text="name"></span>
 
                         <!-- Chevron -->
@@ -144,8 +183,49 @@ foreach (glob("$folder/*.json") as $path) {
     </main>
     <script>
         document.addEventListener('alpine:init', () => {
+            Alpine.store('theme', {
+                mode: localStorage.getItem('theme') || 'system',
+
+                init() {
+                    this.apply();
+
+                    // For when system color scheme changes 
+                    window.matchMedia('(prefers-color-scheme: dark)')
+                        .addEventListener('change', () => {
+                            if (this.mode === 'system') {
+                                this.apply();
+                            }
+                        });
+                },
+
+                set(mode) {
+                    this.mode = mode;
+                    localStorage.setItem('theme', mode);
+                    this.apply();
+                },
+
+                apply() {
+                    const root = document.documentElement;
+
+                    if (this.mode === 'dark') {
+                        root.classList.add('dark');
+                    } else if (this.mode === 'light') {
+                        root.classList.remove('dark');
+                    } else {
+                        // system
+                        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                            root.classList.add('dark');
+                        } else {
+                            root.classList.remove('dark');
+                        }
+                    }
+                }
+            });
+
             Alpine.store('state', {
-                currentArticle: {},
+                currentArticle: {
+                    content: 'Selecteer artikel'
+                },
                 linkLists: {},
                 date: '<?= (new DateTime())->format('Y-m-d') ?>',
                 init() {
