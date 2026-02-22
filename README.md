@@ -2,190 +2,109 @@
 
 A news article reader application that fetches, extracts, and serves articles through a GraphQL API. Built with PHP, it provides a clean, distraction-free interface for reading articles from at the moment only de Volkskrant. I'm not sure if other news paper sites can be used in the same way.
 
-LLM generated readme, it's a bit much but I'll leave it as is for now... 
+# Read the Volkskrant articles
 
-## Features
+Small PHP app that fetches and extracts news articles (originally targeted at de Volkskrant) and exposes them via a GraphQL API. The project also includes a minimal frontend and utilities for scraping and extracting article content.
 
-- **Article Fetching**: Automatically fetch and extract article content from URLs
-- **Content Extraction**: Intelligent HTML parsing to extract readable article content
-- **GraphQL API**: Query articles via a modern GraphQL interface
-- **Persistent Storage**: Store articles in SQLite database for reliable data persistence
-- **CSRF Protection**: Secure API endpoints with CSRF token validation
-- **Modern UI**: Clean, dark-themed interface built with Tailwind CSS and Alpine.js
-- **Reader Mode**: Distraction-free reading experience
+## Quick Overview
+- Backend: PHP (PSR-4 autoloading, small clean-architecture layout)
+- API: GraphQL endpoint at `/public/graphql.php`
+- Storage: SQLite database at `data/articles.sqlite` (schema provided in `data/schema.sql`)
+- Frontend: Static HTML with Alpine.js and Tailwind CSS
 
-## Tech Stack
-
-### Backend
-- **PHP 8.1+**: Core application logic
-- **GraphQL PHP**: GraphQL implementation for type-safe queries
-- **Custom Domain Model**: Clean architecture with Domain, Application, and Infrastructure layers
-
-### Frontend
-- **Alpine.js**: Lightweight interactivity
-- **Tailwind CSS**: Utility-first styling
-- **HTML5**: Semantic markup
-
-### Build Tools
-- **Composer**: PHP dependency management
-- **Node.js/npm**: Frontend asset building
-- **PostCSS**: CSS processing
-- **ESLint**: Code quality checking
-
-## Project Structure
+## Project layout (relevant files)
 
 ```
-├── src/
-│   ├── Domain/                                 # Core business entities
-│   │   └── Model/
-│   │       ├── Article.php                     # Article entity
-│   │   └── Repository/ 
-│   │   │   └── ArticleRepositoryInterface.php  # Repository interface
-│   ├── Application/                            # Business logic layer
-│   │   ├── ArticleService.php
-│   │   ├── ArticleContentExtractor.php
-│   │   └── ArticleException.php
-│   └── Infrastructure/                         # External integrations
-│       ├── ArticleRepository.php               # SQLite implementation
-│       └── HttpFetcher.php
-├── public/
-│   ├── graphql.php                             # GraphQL endpoint
-│   └── bootstrap.php                           # Application initialization
-├── css/                                        # Stylesheets
-├── data/                                       # Persistent storage
-│       ├── articles.json                       # Legacy JSON storage
-│       └── articles.sqlite                     # SQLite database
-├── index.php                                   # Main entry point
-└── vendor/                                     # Composer dependencies
+├── src/                      # Application source (Domain / Application / Infrastructure)
+├── public/                   # HTTP entrypoints (graphql.php, bootstrap.php)
+├── css/                      # Tailwind input/output
+├── data/                     # Database schema and sample DB/backups
+│   ├── schema.sql
+│   └── articles.sqlite.bck
+├── index.php                 # Frontend page
+├── scrape-links.php          # CLI script for older scraper usage
+└── VolkskrantMultiScraper.php# Legacy scraper class used by `scrape-links.php`
 ```
 
-## Installation
+## Requirements
 
-### Prerequisites
-- PHP 8.1 or higher
-- Node.js and npm
+- PHP 8.1+
 - Composer
+- Node.js & npm (for building Tailwind CSS)
 
-### Setup
+## Setup
 
-1. **Install PHP dependencies**:
-   ```bash
-   composer install
-   ```
+1. Install PHP dependencies:
 
-2. **Install Node dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Build CSS**:
-   ```bash
-   npm run build
-   ```
-
-## Usage
-
-### Development
-
-Start the development server with CSS watch mode:
 ```bash
-npm run dev
+composer install
 ```
 
-This will:
-- Start Tailwind CSS in watch mode
-- Monitor for CSS changes and rebuild automatically
+2. Install Node.js dependencies (only needed to build CSS):
 
-### Production
-
-Build optimized CSS for production:
 ```bash
-npm run build
+npm install
 ```
 
-This generates minified CSS in `css/app.css`.
+3. Build CSS (development watch or one-off build):
 
-### Running the Application
+```bash
+npm run dev   # watch and rebuild CSS
+npm run build # production build (minified)
+```
 
-Start a PHP development server:
+## Initialize the database
+
+The schema is available at `data/schema.sql`. To create or update the SQLite database run the included helper script:
+
+```bash
+./data/init.sh data/articles.sqlite data/schema.sql
+```
+
+This will create `data/articles.sqlite` (or apply the schema to an existing file).
+
+Alternatively run:
+
+```bash
+sqlite3 data/articles.sqlite < data/schema.sql
+```
+
+## Run the application (development)
+
+Start a PHP built-in server from the project root and open `http://localhost:8000`:
+
 ```bash
 php -S localhost:8000
 ```
 
-Access the application at `http://localhost:8000`
+The GraphQL endpoint is available at `/public/graphql.php`.
 
-### Using the app
+## Scrapers and utilities
 
-Either past an url from the Volkskrant and add press the button or chose an article from the drop down when eirlier articles were saved to the database  
+- `scrape-links.php` and `VolkskrantMultiScraper.php` are legacy scripts for scraping — they can be used standalone from the project root.
+- Core scraping and extraction logic lives under `src/Application` and `src/Infrastructure` (`ArticleContentExtractor`, `HttpFetcher`, `ArticleRepository`, etc.).
 
-## API
+## Composer autoload
 
-The application provides a GraphQL API endpoint at `/public/graphql.php`.
+PSR-4 autoloading is configured in `composer.json` — run `composer dump-autoload` after making changes to class files/namespaces.
 
-### Example Query
+## NPM scripts
 
-```graphql
-query {
-  articles {
-    id
-    title
-    url
-    content
-    savedAt
-  }
-}
-```
-
-### Security
-
-- CSRF token validation is required for POST requests
-- Sessions are used to manage CSRF tokens
-- All input is sanitized for security
-
-## Configuration
-
-### Tailwind CSS
-Edit `tailwind.config.js` to customize styling.
-
-### PostCSS
-Configure CSS processing in `postcss.config.js`.
-
-### ESLint
-JavaScript linting configuration in `eslint.config.mjs`.
-
-## Architecture
-
-### Clean Architecture Approach
-
-The project follows clean architecture principles with proper separation of concerns:
-
-- **Domain Layer**: Contains pure business entities (`Article`) and abstractions (`ArticleRepositoryInterface`) with no external dependencies
-- **Application Layer**: Service layer handling use cases (`ArticleService`, `ArticleContentExtractor`) with custom exception handling (`ArticleException`)
-- **Infrastructure Layer**: External integrations and data access (`ArticleRepository` using SQLite, `HttpFetcher`)
-
-This separation ensures:
-- Easy testing and maintainability
-- Independence from frameworks and libraries
-- Clear responsibility boundaries
-- Proper error handling through typed exceptions
-
-### Repository Pattern
-
-The project implements the Repository pattern through `ArticleRepositoryInterface` and `ArticleRepository`, allowing for:
-- Abstraction of data storage details
-- Easy switching between storage backends (JSON, SQLite, etc.)
-- Better testability with mock implementations
-
-## Data Storage
-
-Articles are persisted in a SQLite database located at `data/articles.sqlite`. The database provides reliable, queryable storage with support for transactions and complex queries. A legacy JSON storage option remains available at `data/articles.json`.
-
-## Development Scripts
+The `package.json` includes these useful scripts:
 
 ```bash
-npm run dev      # Watch and rebuild CSS in development
-npm run build    # Build minified CSS for production
+npm run dev   # tailwind watch (development)
+npm run build # build/minify css for production
 ```
+
+## Tips
+
+- Logs are written to `logs/` (see `src/Config/Paths.php` for configured locations).
+- If you see missing classes after removing files, run `composer dump-autoload`.
+
+## Disclaimer
+
+The code in this repository is provided "as is", without warranty of any kind. The author (Andrew) is not responsible or liable for any damages, losses, or legal issues that may arise from using, modifying, or distributing this software. It is your responsibility to ensure that your use of this code complies with applicable laws and the terms of service of any third-party websites or services you interact with. Do not use this project to infringe copyright or access content illegally.
 
 ## License
 
