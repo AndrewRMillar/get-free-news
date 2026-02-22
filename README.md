@@ -1,10 +1,10 @@
-# Read the volkskrant articles
+# Read the news articles
 
-A news article reader application that fetches, extracts, and serves articles through a GraphQL API. Built with PHP, it provides a clean, distraction-free interface for reading articles from at the moment only de Volkskrant. I'm not sure if other news paper sites can be used in the same way.
+A news article reader application that fetches, extracts, and serves articles through a GraphQL API. Built with PHP, it provides a clean, distraction-free interface for reading articles from at the moment only de one Dutch news paper. I'm not sure if other news paper sites can be used in the same way.
 
-# Read the Volkskrant articles
+# Read the news articles
 
-Small PHP app that fetches and extracts news articles (originally targeted at de Volkskrant) and exposes them via a GraphQL API. The project also includes a minimal frontend and utilities for scraping and extracting article content.
+Small PHP app that fetches and extracts news articles (from a single Dutch newspaper) and exposes them via a GraphQL API. The project also includes a minimal frontend and utilities for scraping and extracting article content.
 
 ## Quick Overview
 - Backend: PHP (PSR-4 autoloading, small clean-architecture layout)
@@ -15,15 +15,15 @@ Small PHP app that fetches and extracts news articles (originally targeted at de
 ## Project layout (relevant files)
 
 ```
-├── src/                      # Application source (Domain / Application / Infrastructure)
-├── public/                   # HTTP entrypoints (graphql.php, bootstrap.php)
-├── css/                      # Tailwind input/output
-├── data/                     # Database schema and sample DB/backups
+├── src/                       # Application source (Domain / Application / Infrastructure)
+├── public/                    # HTTP entrypoints (graphql.php, bootstrap.php)
+├── css/                       # Tailwind input/output
+├── data/                      # Database schema and sample DB/backups
 │   ├── schema.sql
-│   └── articles.sqlite.bck
-├── index.php                 # Frontend page
-├── scrape-links.php          # CLI script for older scraper usage
-└── VolkskrantMultiScraper.php# Legacy scraper class used by `scrape-links.php`
+│   └── articles.sqlite
+├── index.php                  # Frontend page
+├── scrape-links.php           # CLI script for a cron
+└── NewsPaperScraper.php # Link scraper class used by `scrape-links.php`
 ```
 
 ## Requirements
@@ -46,11 +46,11 @@ composer install
 npm install
 ```
 
-3. Build CSS (development watch or one-off build):
+3. Build CSS:
 
 ```bash
 npm run dev   # watch and rebuild CSS
-npm run build # production build (minified)
+npm run build # build/minify css
 ```
 
 ## Initialize the database
@@ -81,7 +81,7 @@ The GraphQL endpoint is available at `/public/graphql.php`.
 
 ## Scrapers and utilities
 
-- `scrape-links.php` and `VolkskrantMultiScraper.php` are legacy scripts for scraping — they can be used standalone from the project root.
+- `scrape-links.php` and `NewsPaperScraper.php` are legacy scripts for scraping — they can be used standalone from the project root.
 - Core scraping and extraction logic lives under `src/Application` and `src/Infrastructure` (`ArticleContentExtractor`, `HttpFetcher`, `ArticleRepository`, etc.).
 
 ## Composer autoload
@@ -94,7 +94,7 @@ The `package.json` includes these useful scripts:
 
 ```bash
 npm run dev   # tailwind watch (development)
-npm run build # build/minify css for production
+npm run build # basically only build/minify css
 ```
 
 ## Tips
@@ -104,7 +104,7 @@ npm run build # build/minify css for production
 
 ## Disclaimer
 
-The code in this repository is provided "as is", without warranty of any kind. The author (Andrew) is not responsible or liable for any damages, losses, or legal issues that may arise from using, modifying, or distributing this software. It is your responsibility to ensure that your use of this code complies with applicable laws and the terms of service of any third-party websites or services you interact with. Do not use this project to infringe copyright or access content illegally.
+The code in this repository is provided "as is", without warranty of any kind. The author (Andrew) is not responsible or liable for any damages, losses, or legal issues that may arise from using, modifying, or distributing this software. It is your responsibility to ensure that your use of this code complies with applicable laws and the terms of service of any third-party websites or services you interact with. Do not use this project to infringe copyright or access content illegally. This is a personal hobby project with no commercial intentions.
 
 ## License
 

@@ -1,6 +1,6 @@
 <?php
 
-class VolkskrantMultiScraper
+class NewsPaperScraper
 {
     private const BLACKLIST = [
         "volkskrant-magazine",

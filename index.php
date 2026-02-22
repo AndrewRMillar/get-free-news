@@ -1,9 +1,15 @@
 <?php
 
 require_once __DIR__ . '/public/bootstrap.php';
+
+/**
+ * This part is only here for local execution. If you run 
+ * this on a server this part should be done via a cron job 
+ */
 $shellCmnd = 'php scrape-links.php';
 
 shell_exec($shellCmnd) ?: false;
+/** End local execution part */
 
 $folder = __DIR__ . '/scraped-pages';
 

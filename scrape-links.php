@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/VolkskrantMultiScraper.php';
+require_once __DIR__ . '/NewsPaperScraper.php';
 
 $urls = [
     'https://www.volkskrant.nl',
@@ -10,6 +10,6 @@ $urls = [
     'https://www.volkskrant.nl/opinie/'
 ];
 
-$scraper = new VolkskrantMultiScraper($urls);
+$scraper = new NewsPaperScraper($urls);
 
 $scraper->run();
