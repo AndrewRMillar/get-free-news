@@ -8,3 +8,5 @@ vendor/
 logs/
 data/articles.sqlite
 css/app.css
+data/articles.db
+scraper.log
