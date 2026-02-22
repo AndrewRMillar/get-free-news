@@ -70,27 +70,27 @@ foreach (glob("$folder/*.json") as $path) {
             <div x-data class="flex gap-2 items-center">
 
                 <button
-                    @click="$store.theme.set('light')"
-                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    @click="$store.theme.set('light')" title="Light"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" :class="$store.theme.mode === 'light' ? 'bg-gray-400 dark:bg-gray-900' : ''">
                     ☀️
                 </button>
 
                 <button
-                    @click="$store.theme.set('dark')"
-                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    @click="$store.theme.set('dark')" title="Dark"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" :class="$store.theme.mode === 'dark' ? 'bg-gray-400 dark:bg-gray-900' : ''">
                     🌙
                 </button>
 
                 <button
-                    @click="$store.theme.set('system')"
-                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700">
+                    @click="$store.theme.set('system')" title="System"
+                    class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" :class="$store.theme.mode === 'system' ? 'bg-gray-400 dark:bg-gray-900' : ''">
                     🖥
                 </button>
 
             </div>
         </header>
-        <div class="w-full logo mb-5">
-            <a title="Naar de homepagina" href="/" class="flex flew-col w-full justify-center">
+        <div class="w-full logo mb-5 flex justify-center">
+            <a title="Naar de homepagina" href="/" class="inline-flex flew-col justify-center mt-2 px-8 py-4 rounded-full bg-neutral-100 border border-black">
                 <svg fill="none" height="30" width="244"
                     xmlns="http://www.w3.org/2000/svg">
                     <g clip-path="url(#a)">
@@ -113,7 +113,7 @@ foreach (glob("$folder/*.json") as $path) {
             class="w-full mx-auto space-y-4">
 
             <template x-for="(listsByDate, name) in $store.state.linkLists" :key="name">
-                <div class="bg-gray-400 border dark:border-gray-600 rounded-sm shadow-sm overflow-hidden">
+                <div class="bg-gray-400 border dark:border-gray-600 rounded-md shadow-sm overflow-hidden">
 
                     <!-- NAME HEADER -->
                     <button
@@ -176,7 +176,7 @@ foreach (glob("$folder/*.json") as $path) {
         <div x-data>
             <template x-if="$store.state.currentArticle">
                 <div>
-                    <div x-html="$store.state.currentArticle.content" class="text-justify"></div>
+                    <div x-html="$store.state.currentArticle.content" class="text-justify prose prose-h2:text-lg prose-h2:font-medium"></div>
                 </div>
             </template>
         </div>
@@ -224,7 +224,7 @@ foreach (glob("$folder/*.json") as $path) {
 
             Alpine.store('state', {
                 currentArticle: {
-                    content: 'Selecteer artikel'
+                    content: '<h3 class="mt-4 text-xl">Selecteer artikel</h3>'
                 },
                 linkLists: {},
                 date: '<?= (new DateTime())->format('Y-m-d') ?>',
