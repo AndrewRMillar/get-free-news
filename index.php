@@ -2,9 +2,11 @@
 
 require_once __DIR__ . '/public/bootstrap.php';
 
+// phpcs:ignoreFile
+
 /**
- * This part is only here for local execution. If you run 
- * this on a server this part should be done via a cron job 
+ * This part is only here for local execution. If you run
+ * this on a server this part should be done via a cron job
  */
 $shellCmnd = 'php scrape-links.php';
 

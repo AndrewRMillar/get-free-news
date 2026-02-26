@@ -14,7 +14,9 @@ final class ArticleRepository implements ArticleRepositoryInterface
     public function __construct(
         private PDO $pdo,
         private LoggerInterface $logger
-    ) {}
+    ) {
+        // nothing here yet
+    }
 
     public function save(Article $article): bool
     {
@@ -31,14 +33,19 @@ final class ArticleRepository implements ArticleRepositoryInterface
             ':publication_date' => $article->publishedAt,
         ]);
 
-        // Errorcode '00000': "Execution of the operation was successful and did not result in any type of warning or exception condition."
+        // Errorcode '00000': success no warning or exception
         if ($stmt->errorCode() != '00000') {
             $this->logger->error('PDO error, error info', ['errorCode' => $stmt->errorInfo()]);
         }
 
         $newRows = $stmt->rowCount();
 
-        $this->logger->info("$newRows nieuwe articelen in de database (" . __LINE__ . " " . __CLASS__ . ")", ['Articles added' => $newRows]);
+        $this->logger->info(
+            "$newRows nieuwe articelen in de database (" . __LINE__ . " " . __CLASS__ . ")",
+            [
+                'Articles added' => $newRows
+            ]
+        );
 
         return $executed && $newRows > 0;
     }

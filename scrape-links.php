@@ -10,6 +10,6 @@ $urls = [
     'https://www.volkskrant.nl/opinie/'
 ];
 
-$scraper = new NewsPaperScraper($urls);
+$scraper = new Src\NewsPaperScraper($urls);
 
 $scraper->run();

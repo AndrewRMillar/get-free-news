@@ -52,12 +52,21 @@ final class ArticleService
         $isNewArticle = $this->repository->save($article);
 
         if ($isNewArticle) {
-            $this->logger->info('Article saved successfully (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => $url]);
+            $this->logger->info(
+                'Article saved successfully (' . __LINE__ . ' ' . __CLASS__ . ')',
+                ['url' => $url]
+            );
         } else {
-            $this->logger->info('Article not saved, already in database (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => $url]);
+            $this->logger->info(
+                'Article not saved, already in database (' . __LINE__ . ' ' . __CLASS__ . ')',
+                ['url' => $url]
+            );
         }
 
-        $this->logger->info('Returning article with this title', ['title' => mb_substr($article->title, 0, 25)]);
+        $this->logger->info(
+            'Returning article with this title',
+            ['title' => mb_substr($article->title, 0, 25)]
+        );
 
         return $article;
     }

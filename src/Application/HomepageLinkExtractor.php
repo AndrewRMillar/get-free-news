@@ -15,7 +15,9 @@ final class HomepageLinkExtractor
 
     public function __construct(
         private LoggerInterface $logger
-    ) {}
+    ) {
+        // nothing here yet
+    }
 
     /**
      * @return array<int, array{title: string, url: string}>
@@ -57,9 +59,10 @@ final class HomepageLinkExtractor
             }
         }
 
-        $this->logger->info('Homepage links extracted (' . __LINE__ . ' ' . __CLASS__ . ')', [
-            'count' => count($links)
-        ]);
+        $this->logger->info(
+            'Homepage links extracted (' . __LINE__ . ' ' . __CLASS__ . ')',
+            ['count' => count($links)]
+        );
 
         return $links;
     }

@@ -14,5 +14,9 @@
             "Shared\\": "Shared/",
             "Config\\": "src/Config/"
         }
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "*",
+        "phpstan/phpstan": "^2.1"
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+namespace Src;
+
 class NewsPaperScraper
 {
     private const BLACKLIST = [
@@ -135,19 +137,21 @@ class NewsPaperScraper
         return trim(preg_replace(['/\s{2,}/', '/\n+/'], [' ', "\n"], $html));
     }
 
-    private function createXPath(string $html): ?DOMXPath
+    private function createXPath(string $html): ?\DOMXPath
     {
-        if ($html === '') return null;
+        if ($html === '') {
+            return null;
+        }
 
         libxml_use_internal_errors(true);
-        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom = new \DOMDocument('1.0', 'UTF-8');
         $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html);
         libxml_clear_errors();
 
-        return new DOMXPath($dom);
+        return new \DOMXPath($dom);
     }
 
-    private function extractLinks(DOMXPath $xpath): array
+    private function extractLinks(\DOMXPath $xpath): array
     {
         $links = [];
         $nodes = $xpath->query('//a[contains(@class,"wl-teaser--") or contains(@class,"linkbox-overlay")]')
@@ -156,7 +160,9 @@ class NewsPaperScraper
         $this->log("Found " . $nodes->length . " potential links");
         foreach ($nodes as $node) {
             $this->log("Found node: " . $node->textContent);
-            if (!$node instanceof DOMElement) continue;
+            if (!$node instanceof \DOMElement) {
+                continue;
+            }
 
             $href = $node->getAttribute('href');
             if ($this->isValidLink($href)) {
@@ -168,10 +174,16 @@ class NewsPaperScraper
 
     private function isValidLink(string $href): bool
     {
-        if (strlen($href) < 100) return false;
-        foreach (self::BLACKLIST as $word) {
-            if (str_contains($href, $word)) return false;
+        if (strlen($href) < 100) {
+            return false;
         }
+
+        foreach (self::BLACKLIST as $word) {
+            if (str_contains($href, $word)) {
+                return false;
+            }
+        }
+
         return true;
     }
 

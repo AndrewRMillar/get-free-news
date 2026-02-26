@@ -33,14 +33,24 @@ class LinksService
 
         $html = $this->fetcher->fetch(HomepageLinkExtractor::HOMEPAGE_URL);
         if (!$html) {
-            $this->logger->warning('Failed to fetch homepage for links (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => HomepageLinkExtractor::HOMEPAGE_URL]);
+            $this->logger->warning(
+                'Failed to fetch homepage for links (' . __LINE__ . ' ' . __CLASS__ . ')',
+                [
+                    'url' => HomepageLinkExtractor::HOMEPAGE_URL
+                ]
+            );
             return [];
         }
 
         $extractedLinks = $this->linkExtractor->extract($html, 50);
 
         if (!$extractedLinks) {
-            $this->logger->warning('No links extracted from homepage (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => HomepageLinkExtractor::HOMEPAGE_URL]);
+            $this->logger->warning(
+                'No links extracted from homepage (' . __LINE__ . ' ' . __CLASS__ . ')',
+                [
+                    'url' => HomepageLinkExtractor::HOMEPAGE_URL
+                ]
+            );
             return [];
         }
 

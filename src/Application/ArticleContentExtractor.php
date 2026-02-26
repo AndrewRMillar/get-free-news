@@ -106,7 +106,12 @@ final class ArticleContentExtractor
                 $titleHtml .= htmlspecialchars($src) . '"';
 
                 if ($title) {
-                    $this->logger->info('Found title(' . __LINE__ . ' ' . __CLASS__ . ')', ['title' => mb_substr($title, 0, 25)]);
+                    $this->logger->info(
+                        'Found title(' . __LINE__ . ' ' . __CLASS__ . ')',
+                        [
+                            'title' => mb_substr($title, 0, 25)
+                        ]
+                    );
                     $titleHtml .= ' alt="' . htmlspecialchars($title) . '"';
                 }
 
@@ -132,7 +137,12 @@ final class ArticleContentExtractor
 
         try {
             $date = new DateTime($meta->getAttribute('content'));
-            $this->logger->info('Published time extracted (' . __LINE__ . ' ' . __CLASS__ . ')', ['published_time' => $date->format(DateTime::ATOM)]);
+            $this->logger->info(
+                'Published time extracted (' . __LINE__ . ' ' . __CLASS__ . ')',
+                [
+                    'published_time' => $date->format(DateTime::ATOM)
+                ]
+            );
 
             return '<p class="text-sm text-gray-500">'
                 . 'Gepubliceerd op: ' . htmlspecialchars($date->format('l j F Y - H:i'))
