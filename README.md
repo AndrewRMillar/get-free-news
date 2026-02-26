@@ -31,6 +31,7 @@ Small PHP app that fetches and extracts news articles (from a single Dutch newsp
 - PHP 8.1+
 - Composer
 - Node.js & npm (for building Tailwind CSS)
+- chromium-browser
 
 ## Setup
 
@@ -46,7 +47,14 @@ composer install
 npm install
 ```
 
-3. Build CSS:
+3. Install chromium if not aleady installed
+
+```bash
+sudo apt update 
+sudo apt install -y chromium-browser
+```
+
+4. Build CSS:
 
 ```bash
 npm run dev   # watch and rebuild CSS
@@ -71,7 +79,7 @@ sqlite3 data/articles.sqlite < data/schema.sql
 
 ## Run the application (development)
 
-Start a PHP built-in server from the project root and open `http://localhost:8000`:
+Start a PHP server, like the [vs code php server extention](https://marketplace.visualstudio.com/items?itemName=brapifra.phpserver), from the project root and open `http://localhost:8000`, or some other way:
 
 ```bash
 php -S localhost:8000
