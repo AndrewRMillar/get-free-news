@@ -39,7 +39,7 @@ final class ArticleService
             return null;
         }
 
-        [$title, $content] = $this->contentExtractor->extract($html, $url);
+        [$title, $content] = $this->contentExtractor->extract($html, $url) ?? [null, null];
 
         $article = new Article(
             0,

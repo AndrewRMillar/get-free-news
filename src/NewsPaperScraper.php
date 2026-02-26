@@ -20,9 +20,9 @@ class NewsPaperScraper
         "puzzels"
     ];
 
+    /** @param string[] $urls */
     public function __construct(
         private array $urls,
-        private string $userAgent = 'Mozilla/5.0',
         private int $maxRetries = 3,
         private string $logFile = 'scraper.log',
         private string $tempDir = '',
@@ -38,7 +38,7 @@ class NewsPaperScraper
         }
 
         $json  = file_get_contents($filename);
-        $data  = json_decode($json, true);
+        $data  = json_decode($json ?: '', true);
         $today = date('Y-m-d');
 
         return !empty($data[$today]);
@@ -77,7 +77,7 @@ class NewsPaperScraper
 
             $links = $this->extractLinks($xpath);
 
-            if (empty($links)) {
+            if (empty(array_filter($links, fn(string $v): bool => $v !== ''))) {
                 $this->log("⚠️ No valid links from {$url}");
                 continue;
             }
@@ -113,7 +113,7 @@ class NewsPaperScraper
         }
 
         $path = parse_url($url, PHP_URL_PATH) ?? '/';
-        $base = basename(rtrim($path, '/')) ?: 'home';
+        $base = basename(rtrim($path ?: '', '/')) ?: 'home';
         return $this->folderName . "{$base}.json";
     }
 
@@ -151,18 +151,26 @@ class NewsPaperScraper
         return new \DOMXPath($dom);
     }
 
+    /**
+     * @return list<string>
+     */
     private function extractLinks(\DOMXPath $xpath): array
     {
         $links = [];
+
+        /** \DOMNodeList $nodes */
         $nodes = $xpath->query('//a[contains(@class,"wl-teaser--") or contains(@class,"linkbox-overlay")]')
-            ?: $xpath->query('//a[contains(@class,"teaser--") or contains(@class,"linkbox-overlay")]');
+            ?: ($xpath->query('//a[contains(@class,"teaser--") or contains(@class,"linkbox-overlay")]') ?: null);
+
+        if (!$nodes) {
+            $this->log("No nodes found");
+            return [''];
+        }
 
         $this->log("Found " . $nodes->length . " potential links");
         foreach ($nodes as $node) {
+            /** @var \DOMElement $node */
             $this->log("Found node: " . $node->textContent);
-            if (!$node instanceof \DOMElement) {
-                continue;
-            }
 
             $href = $node->getAttribute('href');
             if ($this->isValidLink($href)) {
@@ -187,11 +195,15 @@ class NewsPaperScraper
         return true;
     }
 
+    /**
+     * @param string[] $links
+     * @param string $filename
+     */
     private function save(string $filename, array $links): void
     {
         $today = date('Y-m-d');
         $existing = file_exists($filename)
-            ? json_decode(file_get_contents($filename), true) ?? []
+            ? json_decode(file_get_contents($filename) ?: '', true) ?? []
             : [];
 
         $existing[$today] = isset($existing[$today])

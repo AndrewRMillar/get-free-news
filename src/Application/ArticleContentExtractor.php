@@ -33,6 +33,9 @@ final class ArticleContentExtractor
     }
 
 
+    /**
+     * @return array{string|null, string}|null
+     */
     public function extract(string $html, string $url): ?array
     {
         $this->logger->info('Starting article extraction (' . __LINE__ . ' ' . __CLASS__ . ')', ['url' => $url]);
@@ -82,13 +85,18 @@ final class ArticleContentExtractor
         return [$title, $articleHtml];
     }
 
+    /**
+     * @return array{string|null, string}
+     */
     private function extractHeader(DOMXPath $xpath): array
     {
         $title = null;
         $titleHtml = '';
+        $src = null;
 
-        $titleNode = $xpath->query('//head/title')->item(0);
-        if ($titleNode) {
+        $titleNodes = $xpath->query('//head/title');
+        $titleNode = $titleNodes !== false ? $titleNodes->item(0) : null;
+        if ($titleNode instanceof \DOMNode) {
             $title = trim(explode('|', $titleNode->textContent)[0]);
             $titleHtml .= '<h1 class="text-2xl text-neutral-800 dark:text-white font-bold text-center my-4">'
                 . htmlspecialchars($title)
@@ -96,7 +104,8 @@ final class ArticleContentExtractor
         }
 
         // Preloaded hero image
-        $link = $xpath->query('//head/meta[@property="og:image"]')->item(0);
+        $linkNodes = $xpath->query('//head/meta[@property="og:image"]');
+        $link = $linkNodes !== false ? $linkNodes->item(0) : null;
 
         if ($link instanceof DOMElement) {
             $src = $link->getAttribute('content');
@@ -126,8 +135,12 @@ final class ArticleContentExtractor
 
     private function extractPublishedDate(DOMXPath $xpath): string
     {
-        $meta = $xpath->query('//meta[@property="article:published_time"]');
-        if (!$meta = $meta->item(0)) {
+        $metaNodes = $xpath->query('//meta[@property="article:published_time"]');
+        if ($metaNodes === false) {
+            return '';
+        }
+        $meta = $metaNodes->item(0);
+        if (!$meta) {
             return '';
         }
 
@@ -158,30 +171,32 @@ final class ArticleContentExtractor
         $this->logger->info('Start extracting article section (' . __LINE__ . ' ' . __CLASS__ . ')');
         $logMessage = '';
 
-        $main = $xpath->query('//main');
-        if (!$main = $main->item(0)) {
+        $mainNodes = $xpath->query('//main');
+        $main = $mainNodes !== false ? $mainNodes->item(0) : null;
+        if (!$main instanceof \DOMNode) {
             $this->logger->warning('Main element not found (' . __LINE__ . ' ' . __CLASS__ . ')');
             return null;
         }
 
         $logMessage .= 'Found main element. ';
 
-        $article = $xpath->query('.//article', $main);
-        if (!$article = $article->item(0)) {
+        $articleNodes = $xpath->query('.//article', $main);
+        $article = $articleNodes !== false ? $articleNodes->item(0) : null;
+        if (!$article instanceof \DOMNode) {
             $this->logger->warning('Article element not found (' . __LINE__ . ' ' . __CLASS__ . ')');
             return null;
         }
         $logMessage .= 'Found article element. ';
 
-        $section = $xpath->query('./section', $article);
-        if (!$section) {
-            $section = $xpath->query('div[@class*="block-text"]');
+        $sectionNodes = $xpath->query('./section', $article);
+        if ($sectionNodes === false || $sectionNodes->length === 0) {
+            $sectionNodes = $xpath->query('div[@class*="block-text"]');
         }
-        $section = $section->item(0);
+        $section = $sectionNodes !== false ? $sectionNodes->item(0) : null;
 
         $logMessage .= 'Searched for section element. ';
 
-        if (!$section) {
+        if (!$section instanceof DOMElement) {
             $this->logger->warning('Section element not found (' . __LINE__ . ' ' . __CLASS__ . ')');
             return null;
         }
@@ -194,8 +209,12 @@ final class ArticleContentExtractor
 
     private function cleanSection(DOMXPath $xpath, DOMElement $section): DOMElement
     {
-        foreach ($xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section) as $node) {
-            $node->parentNode?->removeChild($node);
+        $nodesToRemove = $xpath->query('.//aside | .//button | .//*[@aria-hidden="true"]', $section);
+        if ($nodesToRemove !== false) {
+            /** @var \DOMNode $node */
+            foreach ($nodesToRemove as $node) {
+                $node->parentNode?->removeChild($node);
+            }
         }
         $this->logger->info('Cleaned unwanted elements from article section (' . __LINE__ . ' ' . __CLASS__ . ')');
 
@@ -204,7 +223,11 @@ final class ArticleContentExtractor
 
     private function fixRelativeLinks(DOMXPath $xpath, DOMElement $section, string $baseUrl): DOMElement
     {
-        foreach ($xpath->query('.//a', $section) as $a) {
+        $aNodes = $xpath->query('.//a', $section);
+        if ($aNodes === false) {
+            return $section;
+        }
+        foreach ($aNodes as $a) {
             if (!$a instanceof DOMElement) {
                 continue;
             }
@@ -217,7 +240,8 @@ final class ArticleContentExtractor
                 );
             }
         }
-        $this->logger->info('Fixed relative links in article section (' . __LINE__ . ' ' . __CLASS__ . ')');
+
+        $this->logger?->info('Fixed relative links in article section (' . __LINE__ . ' ' . __CLASS__ . ')');
 
         return $section;
     }

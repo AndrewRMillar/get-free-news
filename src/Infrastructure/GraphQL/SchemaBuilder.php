@@ -16,7 +16,6 @@ use Infrastructure\ArticleRepository;
 use Infrastructure\HttpFetcher;
 use Throwable;
 
-
 class SchemaBuilder
 {
     public function __construct(
@@ -26,7 +25,9 @@ class SchemaBuilder
         private LinkType $homepageLinkType,
         private HttpFetcher $fetcher,
         private HomepageLinkExtractor $homepageLinkExtractor
-    ) {}
+    ) {
+        // No initialization needed for now
+    }
 
     public function getQueryType(): ObjectType
     {
@@ -92,7 +93,7 @@ class SchemaBuilder
                         try {
                             $content = $this->articleService->fetchAndSave($args['url']);
 
-                            if ($content === false || !$content) {
+                            if (!$content) {
                                 throw new ArticleException('Could not read article.');
                             }
 
@@ -102,9 +103,6 @@ class SchemaBuilder
                                 $e->getMessage(),
                                 0,
                                 null,
-                                null,
-                                null,
-                                ['code' => $e->codeKey]
                             );
                         } catch (Throwable $e) {
                             error_log($e->getMessage());
@@ -113,10 +111,6 @@ class SchemaBuilder
                             throw new UserError(
                                 'An error occurred while processing the article.',
                                 0,
-                                null,
-                                null,
-                                null,
-                                ['code' => 'INTERNAL_ERROR']
                             );
                         }
                     },

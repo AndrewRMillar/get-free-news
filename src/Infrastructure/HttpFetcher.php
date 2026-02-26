@@ -19,6 +19,13 @@ final class HttpFetcher
             CURLOPT_SSL_VERIFYHOST => 2,
         ]);
 
-        return curl_exec($ch) ?: false;
+        $result = curl_exec($ch);
+        $success = curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200;
+
+        if ($result === true || ($result && strlen($result) < 100) || !$success) {
+            return false;
+        }
+
+        return $result;
     }
 }

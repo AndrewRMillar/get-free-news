@@ -38,6 +38,11 @@ final class HomepageLinkExtractor
 
         $links = [];
 
+        if ($nodes === false) {
+            $this->logger->error('Query returned false for homepage links (' . __LINE__ . ' ' . __CLASS__ . ')');
+            return [];
+        }
+
         foreach ($nodes as $node) {
             if (!$node instanceof DOMElement || !$node->hasAttribute('href')) {
                 continue;

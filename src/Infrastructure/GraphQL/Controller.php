@@ -13,9 +13,14 @@ class Controller
 {
     public function __construct(
         private SchemaBuilder $schemaBuilder
-    ) {}
+    ) {
+        // No initialization needed for now
+    }
 
-    public function handleRequest($input): string
+    /**
+     * @param array<string, mixed> $input
+     */
+    public function handleRequest(array $input): string
     {
         $query = $input['query'] ?? '';
         $variables = $input['variables'] ?? [];
@@ -29,7 +34,7 @@ class Controller
                 $variables
             );
 
-            return json_encode($result->toArray());
+            return json_encode($result->toArray()) ?? '';
         } catch (Throwable $e) {
             error_log($e->getMessage());
             error_log($e->getTraceAsString());
@@ -39,7 +44,7 @@ class Controller
                 'errors' => [
                     ['message' => 'Internal server error: ' . $e->getMessage()],
                 ],
-            ]);
+            ]) ?? '';
         }
     }
 
