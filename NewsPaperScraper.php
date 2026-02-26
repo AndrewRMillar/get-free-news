@@ -122,19 +122,14 @@ class NewsPaperScraper
 
         // use curl with exit code
         $cmd = sprintf(
-            'curl -s -L -A %s -w "%%{http_code}" -o %s %s',
-            escapeshellarg($this->userAgent),
-            escapeshellarg($tempFile),
-            escapeshellarg($url)
+            'chromium --headless --dump-dom %s > %s',
+            escapeshellarg($url),
+            escapeshellarg($tempFile)
         );
 
-        $response = shell_exec($cmd);
-        $statusCode = (int)trim($response);
+        $this->log('Executing command: ' . $cmd);
 
-        if ($statusCode !== 200) {
-            $this->log("HTTP error {$statusCode} for {$url}");
-            return '';
-        }
+        shell_exec($cmd);
 
         $html = @file_get_contents($tempFile) ?: '';
         return trim(preg_replace(['/\s{2,}/', '/\n+/'], [' ', "\n"], $html));
@@ -155,7 +150,12 @@ class NewsPaperScraper
     private function extractLinks(DOMXPath $xpath): array
     {
         $links = [];
-        foreach ($xpath->query('//a[contains(@class,"wl-teaser--") or contains(@class,"linkbox-overlay")]') as $node) {
+        $nodes = $xpath->query('//a[contains(@class,"wl-teaser--") or contains(@class,"linkbox-overlay")]')
+            ?: $xpath->query('//a[contains(@class,"teaser--") or contains(@class,"linkbox-overlay")]');
+
+        $this->log("Found " . $nodes->length . " potential links");
+        foreach ($nodes as $node) {
+            $this->log("Found node: " . $node->textContent);
             if (!$node instanceof DOMElement) continue;
 
             $href = $node->getAttribute('href');
